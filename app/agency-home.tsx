@@ -1178,75 +1178,76 @@ export default function AgencyHome() {
             </p>
           </div>
 
-          <div ref={teamPopupRef} className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2">
+          <div ref={teamPopupRef} className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2 xl:grid-cols-3">
             {team.map((member) => (
               <article key={member.name} className={`flip-card rounded-[1.6rem] ${activeTeamCard === member.name ? "is-flipped" : ""}`}>
-                <div className="flip-inner relative h-full min-h-[24rem]">
-                  <div className="flip-face absolute inset-0 rounded-[1.6rem] surface-panel-strong p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(108,99,255,0.2),rgba(0,212,170,0.18))] text-xl font-bold text-white">
-                        {member.initials}
+                <div className="flip-inner relative h-full min-h-[18rem]">
+                  <div className="flip-face absolute inset-0 rounded-[1.6rem] surface-panel-strong p-4 sm:p-5">
+                    <div className="pointer-events-none absolute left-4 top-4 bottom-4 w-px rounded-full bg-[linear-gradient(180deg,rgba(53,227,177,0.08),rgba(53,227,177,0.55),rgba(143,131,255,0.06))] opacity-80" />
+                    <div className="flex h-full flex-col pl-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(108,99,255,0.18),rgba(0,212,170,0.16))] text-lg font-bold text-white">
+                          {member.initials}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTeamCard((current) => (current === member.name ? null : member.name))}
+                          className="chip flex h-9 w-9 items-center justify-center text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
+                          aria-pressed={activeTeamCard === member.name}
+                          aria-label="Flip card"
+                        >
+                          ⟳
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTeamCard((current) => (current === member.name ? null : member.name))}
-                        className="chip flex h-10 w-10 items-center justify-center text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
-                        aria-pressed={activeTeamCard === member.name}
-                        aria-label="Flip card"
-                      >
-                        ↺
-                      </button>
-                    </div>
-                    <div className="mt-6 space-y-3">
-                      <h3 className="text-2xl font-semibold text-[var(--text)]">{member.name}</h3>
-                      <div className="text-sm uppercase tracking-[0.2em] text-[var(--accent-2)]">
-                        {member.role}
+
+                      <div className="mt-4 space-y-1">
+                        <h3 className="text-lg font-semibold text-[var(--text)]">{member.name}</h3>
+                        <div className="text-[11px] uppercase tracking-[0.2em] text-[var(--accent-2)]">
+                          {member.role}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 pt-2">
+
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {member.skills.map((skill) => (
                           <span
                             key={skill}
-                            className="chip px-3 py-1 text-xs text-[var(--text-soft)]"
+                            className="chip px-3 py-1 text-[11px] text-[var(--text-soft)]"
                           >
                             {skill}
                           </span>
                         ))}
                       </div>
-                    </div>
-                    <div className="mt-8 flex flex-wrap items-center gap-3">
-                      <a
-                        href="#contact"
-                        className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-4 py-3 text-sm font-semibold text-white"
-                      >
-                        View Portfolio →
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTeamCard((current) => (current === member.name ? null : member.name))}
-                        className="chip flex h-10 w-10 items-center justify-center text-sm font-semibold text-[var(--text)]"
-                        aria-label="Flip to bio"
-                      >
-                        ↻
-                      </button>
+
+                      <div className="mt-auto flex items-center justify-start gap-3 pt-4">
+                        <a
+                          href="#contact"
+                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-4 py-2.5 text-sm font-semibold text-white"
+                        >
+                          View Portfolio →
+                        </a>
+                      </div>
                     </div>
                   </div>
-                  <div className="flip-face flip-back absolute inset-0 rounded-[1.6rem] surface-panel-strong p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="text-sm uppercase tracking-[0.2em] text-[var(--text-soft)]">
-                        Bio
+                  <div className="flip-face flip-back absolute inset-0 rounded-[1.6rem] surface-panel-strong p-4 sm:p-5">
+                    <div className="pointer-events-none absolute left-4 top-4 bottom-4 w-px rounded-full bg-[linear-gradient(180deg,rgba(53,227,177,0.08),rgba(53,227,177,0.55),rgba(143,131,255,0.06))] opacity-80" />
+                    <div className="flex h-full flex-col pl-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="text-sm uppercase tracking-[0.2em] text-[var(--text-soft)]">
+                          Bio
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setActiveTeamCard(null)}
+                          className="chip flex h-9 w-9 items-center justify-center text-xs text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
+                          aria-label="Close bio"
+                        >
+                          ✕
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTeamCard(null)}
-                        className="chip flex h-10 w-10 items-center justify-center text-xs text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
-                        aria-label="Close bio"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <p className="mt-4 text-base leading-8 text-[var(--text)]">{member.bio}</p>
-                    <div className="mt-8 rounded-2xl surface-panel p-4 text-sm text-[var(--text-soft)]">
-                      This space can link to LinkedIn, external portfolio pages, or personal case study reels.
+                      <p className="mt-4 text-sm leading-7 text-[var(--text)]">{member.bio}</p>
+                      <div className="mt-auto rounded-2xl surface-panel p-3 text-xs leading-6 text-[var(--text-soft)]">
+                        This space can link to LinkedIn, external portfolio pages, or personal case study reels.
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1689,18 +1690,18 @@ export default function AgencyHome() {
 
       {activeService ? (
         <div
-          className={`fixed inset-0 z-[70] px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-6 ${theme === "light" ? "bg-black/45" : "bg-black/70"}`}
+          className={`fixed inset-0 z-[70] px-3 py-3 backdrop-blur-sm sm:px-6 sm:py-6 ${theme === "light" ? "bg-black/45" : "bg-black/70"}`}
           onClick={() => setActiveServiceIndex(null)}
         >
           <div
-            className={`mx-auto mt-2 max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-[2rem] border p-5 shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:mt-4 sm:p-8 ${
+            className={`mx-auto mt-1 max-h-[calc(100vh-1.5rem)] w-full max-w-[68rem] overflow-y-auto rounded-[2rem] border p-4 shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:mt-2 sm:p-6 lg:min-h-[32rem] ${
               theme === "light"
                 ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.99),rgba(244,234,213,0.98))] text-[#181310]"
                 : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
             }`}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className={`flex items-start justify-between gap-4 border-b pb-5 ${theme === "light" ? "border-black/10" : "border-white/10"}`}>
+            <div className={`flex items-start justify-between gap-4 border-b pb-4 ${theme === "light" ? "border-black/10" : "border-white/10"}`}>
               <div>
                 <div
                   className={`text-sm uppercase tracking-[0.22em] ${
@@ -1709,10 +1710,10 @@ export default function AgencyHome() {
                 >
                   Service Deep Dive
                 </div>
-                <h3 className={`mt-2 text-2xl font-semibold sm:text-[2rem] ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
+                <h3 className={`mt-2 text-[1.9rem] font-semibold leading-tight sm:text-[2.15rem] ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
                   {activeService.title}
                 </h3>
-                <p className={`mt-3 max-w-2xl text-sm leading-7 ${theme === "light" ? "text-[#6f5d49]" : "text-white/68"}`}>
+                <p className={`mt-2 max-w-2xl text-sm leading-6 ${theme === "light" ? "text-[#6f5d49]" : "text-white/68"}`}>
                   {activeService.description}
                 </p>
               </div>
@@ -1730,12 +1731,12 @@ export default function AgencyHome() {
               </button>
             </div>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
-              <div className={`rounded-[1.5rem] border p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
+            <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
+              <div className={`rounded-[1.35rem] border p-4 sm:p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
                 <div className={`text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
                   What This Covers
                 </div>
-                <ul className={`mt-4 space-y-3 text-sm leading-7 ${theme === "light" ? "text-[#2a2118]" : "text-white/82"}`}>
+                <ul className={`mt-3 space-y-2.5 text-sm leading-6 ${theme === "light" ? "text-[#2a2118]" : "text-white/82"}`}>
                   {activeService.points.map((point) => (
                     <li key={point} className="flex gap-3">
                       <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--accent-2)] shadow-[0_0_14px_rgba(53,227,177,0.35)]" />
@@ -1745,11 +1746,11 @@ export default function AgencyHome() {
                 </ul>
               </div>
 
-              <div className={`rounded-[1.5rem] border p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
+              <div className={`rounded-[1.35rem] border p-4 sm:p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
                 <div className={`text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
                   Suggested Tools
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {activeService.technologies.map((technology) => (
                     <span
                       key={technology}
@@ -1764,10 +1765,10 @@ export default function AgencyHome() {
                   ))}
                 </div>
 
-                <div className={`mt-6 text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
+                <div className={`mt-5 text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
                   Delivery Flow
                 </div>
-                <div className="mt-4 space-y-3">
+                <div className="mt-3 grid gap-2 sm:grid-cols-3 sm:gap-3">
                   {[
                     { phase: "Discover", detail: "Clarify the brief, scope, and outcome." },
                     { phase: "Build", detail: "Shape the work with clean structure and polish." },
