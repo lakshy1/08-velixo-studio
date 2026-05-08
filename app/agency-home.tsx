@@ -27,6 +27,12 @@ type Service = {
   technologies: string[];
 };
 
+type AssistantMessage = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+};
+
 const navItems = [
   { label: "Home", href: "#home" },
   { label: "Services", href: "#services" },
@@ -167,6 +173,20 @@ const offerItems = [
   "Cloud Infrastructure & DevOps",
 ];
 
+const assistantSuggestions = [
+  "Luxury SaaS landing page",
+  "AI lead qualification flow",
+];
+
+const mobileDockItems = [
+  { label: "Home", href: "#home", icon: "home" as const },
+  { label: "Services", href: "#services", icon: "services" as const },
+  { label: "Work", href: "#work", icon: "work" as const },
+  { label: "Contact", href: "#contact", icon: "contact" as const },
+];
+
+const sectionOrder = ["home", "services", "work", "team", "reviews", "contact"] as const;
+
 const stats = [
   { target: 50, suffix: "+", label: "Projects" },
   { target: 20, suffix: "+", label: "Clients" },
@@ -299,9 +319,10 @@ function scrollToSection(href: string) {
     return;
   }
 
-  const headerOffset = 92;
+  const header = document.querySelector("header");
+  const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
   const targetY =
-    window.scrollY + target.getBoundingClientRect().top - headerOffset;
+    window.scrollY + target.getBoundingClientRect().top - headerOffset - 12;
   const startY = window.scrollY;
   const distance = targetY - startY;
   const duration = 900;
@@ -432,10 +453,12 @@ function ServiceIcon({ index }: { index: number }) {
 
 function DockIcon({
   variant,
+  className,
 }: {
   variant: "home" | "services" | "work" | "chat" | "contact";
+  className?: string;
 }) {
-  const common = "h-5 w-5 stroke-[1.8] fill-none";
+  const common = `h-5 w-5 stroke-[1.8] fill-none ${className || ""}`;
 
   switch (variant) {
     case "home":
@@ -489,12 +512,15 @@ export default function AgencyHome() {
   });
   const [headerSolid, setHeaderSolid] = useState(false);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
-  const [assistantPrompt, setAssistantPrompt] = useState(
-    "We need a premium agency site for a fintech launch with AI support and a short timeline.",
-  );
-  const [assistantReply, setAssistantReply] = useState(
-    "Ask the AI concierge to shape a project brief, strategy angle, or launch plan.",
-  );
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
+    {
+      id: 1,
+      role: "assistant",
+      content:
+        "Hi, I’m Studio AI. Tell me what you want to build and I’ll shape the brief, scope, and next steps.",
+    },
+  ]);
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantDockOpen, setAssistantDockOpen] = useState(false);
   const [selectedRating, setSelectedRating] = useState(5);
@@ -511,10 +537,13 @@ export default function AgencyHome() {
   const [contactNotice, setContactNotice] = useState("");
   const [contactBusy, setContactBusy] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
+  const [activeSection, setActiveSection] = useState<(typeof sectionOrder)[number]>("home");
 
   const [statsRef, statsVisible] = useInViewOnce<HTMLDivElement>();
   const [workRef, workVisible] = useInViewOnce<HTMLDivElement>();
   const teamPopupRef = useRef<HTMLDivElement | null>(null);
+  const assistantScrollRef = useRef<HTMLDivElement | null>(null);
+  const showAssistantSuggestions = !assistantMessages.some((message) => message.role === "user");
 
   const projectPills = useMemo(
     () => [...projectNames, ...projectNames],
@@ -539,6 +568,7 @@ export default function AgencyHome() {
     event.preventDefault();
     scrollToSection(href);
     setMobileOpen(false);
+    setActiveSection(href.slice(1) as (typeof sectionOrder)[number]);
   }
 
   useEffect(() => {
@@ -580,6 +610,51 @@ export default function AgencyHome() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    let frame = 0;
+
+    const updateActiveSection = () => {
+      cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const viewportCenter = window.scrollY + window.innerHeight * 0.5;
+        let nextSection: (typeof sectionOrder)[number] = "home";
+        let smallestDistance = Number.POSITIVE_INFINITY;
+
+        for (const id of sectionOrder) {
+          const element = document.getElementById(id);
+          if (!element) {
+            continue;
+          }
+
+          const top = element.offsetTop;
+          const middle = top + element.offsetHeight / 2;
+          const distance = Math.abs(middle - viewportCenter);
+
+          if (distance < smallestDistance) {
+            smallestDistance = distance;
+            nextSection = id;
+          }
+        }
+
+        setActiveSection(nextSection);
+      });
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!activeTeamCard) {
       return;
     }
@@ -608,6 +683,7 @@ export default function AgencyHome() {
       if (event.key === "Escape") {
         setActiveServiceIndex(null);
         setReviewModalOpen(false);
+        setAssistantDockOpen(false);
       }
     };
 
@@ -616,7 +692,7 @@ export default function AgencyHome() {
   }, [activeServiceIndex, reviewModalOpen, assistantDockOpen]);
 
   useEffect(() => {
-    if (activeServiceIndex === null && !reviewModalOpen) {
+    if (activeServiceIndex === null && !reviewModalOpen && !assistantDockOpen) {
       return;
     }
 
@@ -626,28 +702,89 @@ export default function AgencyHome() {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [activeServiceIndex, reviewModalOpen]);
+  }, [activeServiceIndex, reviewModalOpen, assistantDockOpen]);
+
+  useEffect(() => {
+    if (!assistantDockOpen) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const dock = assistantScrollRef.current;
+      if (!dock) {
+        return;
+      }
+
+      dock.scrollTo({
+        top: dock.scrollHeight,
+        behavior: "smooth",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [assistantDockOpen, assistantMessages]);
 
   async function handleAssistantSubmit() {
+    const prompt = assistantInput.trim();
+
+    if (!prompt || assistantLoading) {
+      return;
+    }
+
     setAssistantLoading(true);
-    setAssistantReply("Thinking...");
+    setAssistantInput("");
+
+    const userMessage: AssistantMessage = {
+      id: Date.now(),
+      role: "user",
+      content: prompt,
+    };
+    const pendingMessageId = userMessage.id + 1;
+
+    setAssistantMessages((current) => [
+      ...current,
+      userMessage,
+      {
+        id: pendingMessageId,
+        role: "assistant",
+        content: "Thinking...",
+      },
+    ]);
 
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: assistantPrompt }),
+        body: JSON.stringify({ prompt }),
       });
 
       const data = (await response.json()) as { reply?: string; error?: string };
-      setAssistantReply(
+      const reply =
         data.reply ||
-          data.error ||
-          "The assistant could not respond right now. Please try again.",
+        data.error ||
+        "The assistant could not respond right now. Please try again.";
+
+      setAssistantMessages((current) =>
+        current.map((message) =>
+          message.id === pendingMessageId
+            ? {
+                ...message,
+                content: reply,
+              }
+            : message,
+        ),
       );
     } catch {
-      setAssistantReply(
-        "The assistant is offline. Add GROQ_API_KEY to `.env.local` and try again.",
+      setAssistantMessages((current) =>
+        current.map((message) =>
+          message.id === pendingMessageId
+            ? {
+                ...message,
+                content:
+                  "The assistant is offline. Check the API configuration and try again.",
+              }
+            : message,
+        ),
       );
     } finally {
       setAssistantLoading(false);
@@ -815,7 +952,7 @@ export default function AgencyHome() {
                 className="grid h-10 w-10 place-items-center rounded-full soft-border"
                 aria-label="Close navigation menu"
               >
-                Ã—
+                &times;
               </button>
             </div>
             <div className="flex flex-col gap-3">
@@ -845,57 +982,45 @@ export default function AgencyHome() {
       </div>
       ) : null}
 
-      <main className="relative z-10">
-        <section className="mx-auto max-w-7xl px-4 pb-18 pt-12 sm:px-6 lg:px-8 lg:pt-16">
-          <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-            <div className="space-y-8">
+      <main className="relative pb-24 md:pb-0">
+        <section className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-7xl items-center px-4 py-4 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0">
+          <div className="grid gap-6 text-center lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10 lg:text-left">
+            <div className="mx-auto space-y-5 lg:mx-0 lg:space-y-8">
               <div className="inline-flex items-center gap-3 rounded-full chip px-4 py-2 text-sm text-[var(--text-soft)] backdrop-blur">
                 <span className="dot" />
                 Premium digital agency for design, development, AI, and cloud
               </div>
 
-              <div className="space-y-6">
-                <h1 className="section-title max-w-4xl text-5xl font-bold leading-[0.96] tracking-tight text-[var(--text)] sm:text-6xl lg:text-[4.9rem]">
+              <div className="space-y-4 sm:space-y-6">
+                <h1 className="section-title mx-auto max-w-4xl text-[2.75rem] font-bold leading-[0.96] tracking-tight text-[var(--text)] sm:text-6xl lg:mx-0 lg:text-[4.9rem]">
                   We Build Digital Products That Scale
                 </h1>
-                <p className="max-w-2xl text-lg leading-8 text-[var(--text-soft)] sm:text-xl">
+                <p className="mx-auto max-w-2xl text-base leading-7 text-[var(--text-soft)] sm:text-xl lg:mx-0">
                   Design. Development. AI. Cloud. All under one roof, with the clarity of a product team and the polish of a luxury studio.
                 </p>
               </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
                 <a
                   href="#contact"
                   onClick={(event) => handleSmoothAnchor(event, "#contact")}
-                  className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-7 py-4 text-base font-semibold text-white shadow-lg shadow-black/30 transition-transform hover:-translate-y-0.5"
+                  className="inline-flex min-w-[15rem] items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-black/30 transition-transform hover:-translate-y-0.5 sm:min-w-0"
                 >
                   Get a Free Quote
                 </a>
                 <a
                   href="#work"
                   onClick={(event) => handleSmoothAnchor(event, "#work")}
-                  className="inline-flex items-center justify-center rounded-full chip px-7 py-4 text-base font-semibold text-[var(--text)] backdrop-blur transition-colors hover:bg-white/10"
+                  className="inline-flex min-w-[15rem] items-center justify-center rounded-full chip px-7 py-3.5 text-base font-semibold text-[var(--text)] backdrop-blur transition-colors hover:bg-white/10 sm:min-w-0"
                 >
                   See Our Work ↓
                 </a>
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                {[
-                  "Conversion-first UX",
-                  "AI-assisted workflows",
-                  "Launch-ready infrastructure",
-                ].map((item) => (
-                  <div key={item} className="chip rounded-2xl px-4 py-4 text-sm text-[var(--text-soft)]">
-                    {item}
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="relative">
+            <div className="relative mt-1 sm:mt-4 lg:mt-0">
               <div className="absolute inset-0 -z-10 rounded-[2rem] bg-[radial-gradient(circle_at_top_left,rgba(108,99,255,0.24),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(0,212,170,0.18),transparent_45%)] blur-3xl" />
-              <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-6 xl:h-auto xl:min-h-0">
+              <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-4 sm:p-6 xl:h-auto xl:min-h-0">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(108,99,255,0.18),transparent_24%),radial-gradient(circle_at_82%_16%,rgba(53,227,177,0.1),transparent_22%),radial-gradient(circle_at_50%_100%,rgba(255,208,106,0.08),transparent_26%)]" />
                 <div className="flex justify-center">
                   <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur">
@@ -905,13 +1030,13 @@ export default function AgencyHome() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_1fr] xl:items-stretch">
+                <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_1fr] xl:items-stretch">
                   <div
-                    className="widget-water-shell relative flex h-full min-h-[19.5rem] flex-col overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4"
+                    className="widget-water-shell relative hidden h-full min-h-[19.5rem] flex-col overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4 xl:flex"
                     style={{ "--fill": `${widgetProgress}%` } as React.CSSProperties}
                   >
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(53,227,177,0.12),transparent_42%),radial-gradient(circle_at_center,rgba(143,131,255,0.08),transparent_66%)]" />
-                    <div className="relative flex items-center justify-start gap-3">
+                    <div className="relative hidden items-center justify-start gap-3 lg:flex">
                       <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
                         <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-2)] shadow-[0_0_12px_color-mix(in_srgb,var(--accent-2)_55%,transparent)]" />
                         Scanning
@@ -942,14 +1067,14 @@ export default function AgencyHome() {
                     </div>
                   </div>
 
-                  <div className="flex h-full min-h-[19.5rem] flex-col rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4">
-                    <div className="flex flex-1 flex-col justify-start gap-2 pb-3 pt-1">
+                  <div className="flex h-full min-h-0 flex-col rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-3 sm:p-4">
+                    <div className="flex flex-1 flex-col justify-start gap-2 pb-2 pt-0.5 sm:pb-3 sm:pt-1">
                       {offerItems.map((item, index) => {
                         const active = index === offerIndex;
                         return (
                           <div
                             key={item}
-                            className={`flex items-center rounded-[1.05rem] border px-4 py-[0.62rem] transition-all duration-500 ${
+                            className={`flex items-center rounded-[1.05rem] border px-4 py-[0.56rem] transition-all duration-500 ${
                               active
                                 ? "border-white/14 bg-white/[0.06] shadow-[0_10px_26px_rgba(0,0,0,0.14)]"
                                 : "border-white/8 bg-white/[0.025] opacity-65"
@@ -958,7 +1083,7 @@ export default function AgencyHome() {
                               transform: active ? "translateX(0)" : "translateX(4px)",
                             }}
                           >
-                            <div className="flex w-full items-center gap-3">
+                          <div className="flex w-full items-center gap-3">
                               <span className={`h-2 w-2 rounded-full ${active ? "bg-[var(--accent-2)]" : "bg-white/20"}`} />
                               <div className="min-w-0">
                                 <div className={`truncate text-[0.9rem] font-medium tracking-tight ${active ? "text-[var(--text)]" : "text-[var(--text-soft)]"}`}>
@@ -976,7 +1101,7 @@ export default function AgencyHome() {
             </div>
           </div>
 
-          <div className="mt-12 flex items-center gap-3 text-sm text-[var(--text-soft)]">
+          <div className="mt-12 hidden items-center gap-3 text-sm text-[var(--text-soft)] sm:flex">
             <span className="text-[var(--text)]">Scroll</span>
             <span className="dot" />
             <span>Discover the full experience below</span>
@@ -1073,7 +1198,7 @@ export default function AgencyHome() {
           </div>
 
           <div className="flex flex-col gap-6">
-            <div className="surface-panel-strong rounded-[2rem] p-6 xl:w-[calc(50vw+50%)] xl:max-w-none xl:rounded-l-[2rem] xl:rounded-r-none">
+            <div className="surface-panel-strong ml-auto w-[calc(100%-1rem)] rounded-[2rem] p-6 sm:w-[calc(100%-1.5rem)] md:w-[calc(100%-2rem)] lg:w-[calc(100%-3rem)] xl:w-[min(100%,72rem)] xl:max-w-none xl:rounded-l-[2rem] xl:rounded-r-none">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Project names</div>
@@ -1094,7 +1219,7 @@ export default function AgencyHome() {
               </div>
             </div>
 
-            <div className="surface-panel-strong rounded-[2rem] p-6 xl:ml-[calc(50%-50vw)] xl:w-[calc(50vw+50%)] xl:max-w-none xl:rounded-l-none xl:rounded-r-[2rem]">
+            <div className="surface-panel-strong mr-auto w-[calc(100%-1rem)] rounded-[2rem] p-6 sm:w-[calc(100%-1.5rem)] md:w-[calc(100%-2rem)] lg:w-[calc(100%-3rem)] xl:w-[min(100%,72rem)] xl:max-w-none xl:rounded-l-none xl:rounded-r-[2rem]">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Client logos</div>
@@ -1310,37 +1435,39 @@ export default function AgencyHome() {
           </div>
         </section>
 
-        <div
-          className="fixed inset-0 z-[66]"
-          onClick={() => setAssistantDockOpen(false)}
-        >
-          {assistantDockOpen ? (
+        {assistantDockOpen ? (
+          <>
             <div
-              id="assistant-dock"
-              className={`w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-[1.75rem] border shadow-[0_30px_80px_rgba(0,0,0,0.42)] ${
-                theme === "light"
-                  ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.995),rgba(244,234,213,0.985))] text-[#181310]"
-                  : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
-                }`}
-              onClick={(event) => event.stopPropagation()}
-              style={{
-                position: "fixed",
-                right: "1rem",
-                bottom: "4.5rem",
-              }}
+              className="fixed inset-0 z-[120] lg:hidden"
+              onClick={() => setAssistantDockOpen(false)}
             >
-              <div className="relative overflow-hidden px-4 py-4 sm:px-5">
-                <div className={`absolute inset-0 opacity-40 ${theme === "light" ? "bg-[radial-gradient(circle_at_20%_10%,rgba(226,191,103,0.25),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(143,116,37,0.18),transparent_24%)]" : "bg-[radial-gradient(circle_at_18%_12%,rgba(143,131,255,0.22),transparent_28%),radial-gradient(circle_at_82%_0%,rgba(53,227,177,0.18),transparent_24%)]"}`} />
-                <div className="relative flex items-start justify-between gap-3">
-                  <div>
-                    <div className={`text-xs uppercase tracking-[0.28em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
-                      AI Concierge
+              <div
+                className={`absolute inset-0 ${
+                  theme === "light"
+                    ? "bg-[linear-gradient(180deg,rgba(252,246,233,0.98),rgba(244,234,213,0.98))]"
+                    : "bg-[linear-gradient(180deg,rgba(4,8,20,0.98),rgba(8,13,25,0.99))]"
+                } backdrop-blur-[12px]`}
+                aria-hidden="true"
+              />
+              <section
+                id="assistant-dock"
+                className={`absolute inset-0 flex h-full w-full flex-col overflow-hidden border shadow-[0_30px_80px_rgba(0,0,0,0.42)] ${
+                  theme === "light"
+                    ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.995),rgba(244,234,213,0.985))] text-[#181310]"
+                    : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
+                }`}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="relative flex items-start justify-between gap-4 border-b border-white/5 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] sm:px-5">
+                  <div className="relative">
+                    <div className={`text-[10px] uppercase tracking-[0.34em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
+                      Studio AI
                     </div>
                     <div className={`mt-2 text-lg font-semibold ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
-                      Groq Brief Builder
+                      Project chat
                     </div>
                     <p className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#7a6850]" : "text-white/56"}`}>
-                      Shape a polished project brief without leaving the page.
+                      Shape the brief, scope, and next steps in one place.
                     </p>
                   </div>
                   <button
@@ -1351,96 +1478,231 @@ export default function AgencyHome() {
                         ? "border-black/10 bg-white/70 text-[#181310] hover:bg-white"
                         : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
                     }`}
-                    aria-label="Close AI concierge"
+                    aria-label="Close Studio AI"
+                  >
+                    &times;
+                  </button>
+                </div>
+
+                <div
+                  ref={assistantScrollRef}
+                  className="flex-1 overflow-y-auto px-4 py-4 sm:px-5"
+                >
+                  <div className="space-y-3">
+                    {assistantMessages.map((message) => {
+                      const isUser = message.role === "user";
+
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[85%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm ${
+                              isUser
+                                ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-white"
+                                : theme === "light"
+                                  ? "border border-black/5 bg-white/72 text-[#2a2118]"
+                                  : "border border-white/8 bg-white/[0.04] text-white/88"
+                            }`}
+                          >
+                            <div className="whitespace-pre-wrap">{message.content}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="border-t border-white/5 bg-black/5 p-3 sm:p-4 dock-safe">
+                  {showAssistantSuggestions ? (
+                    <div className="-mx-1 mb-3 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1">
+                      {assistantSuggestions.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setAssistantInput(item)}
+                          className="chip shrink-0 whitespace-nowrap px-3 py-1.5 text-[11px] text-[var(--text-soft)] shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void handleAssistantSubmit();
+                    }}
+                    className="relative"
+                  >
+                    <div className="flex items-center gap-2 rounded-[1.55rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.16)]">
+                      <input
+                        value={assistantInput}
+                        onChange={(event) => setAssistantInput(event.target.value)}
+                        className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]"
+                        placeholder="Message Studio AI..."
+                        aria-label="Message Studio AI"
+                      />
+                      <button
+                        type="submit"
+                        disabled={assistantLoading || !assistantInput.trim()}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(0,0,0,0.2)] transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Send message"
+                      >
+                        ↑
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </section>
+            </div>
+
+            <div className="pointer-events-none fixed inset-0 z-[66] hidden lg:block">
+              <section
+                id="assistant-dock"
+                className={`pointer-events-auto fixed bottom-4 right-4 flex flex-col overflow-hidden rounded-[1.75rem] border shadow-[0_30px_80px_rgba(0,0,0,0.42)] ${
+                  theme === "light"
+                    ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.995),rgba(244,234,213,0.985))] text-[#181310]"
+                    : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
+                }`}
+                style={{
+                  right: "1rem",
+                  bottom: "1rem",
+                  width: "min(26rem, calc(100vw - 2rem))",
+                  height: "min(38rem, calc(100vh - 8.5rem))",
+                  maxHeight: "calc(100vh - 8.5rem)",
+                }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="relative flex items-start justify-between gap-4 border-b border-white/5 px-4 py-4 sm:px-5">
+                  <div className="relative">
+                    <div className={`text-[10px] uppercase tracking-[0.34em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
+                      Studio AI
+                    </div>
+                    <div className={`mt-2 text-lg font-semibold ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
+                      Project chat
+                    </div>
+                    <p className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#7a6850]" : "text-white/56"}`}>
+                      Shape the brief, scope, and next steps in one place.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAssistantDockOpen(false)}
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors ${
+                      theme === "light"
+                        ? "border-black/10 bg-white/70 text-[#181310] hover:bg-white"
+                        : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
+                    }`}
+                    aria-label="Close Studio AI"
                   >
                     ×
                   </button>
                 </div>
 
-                <div className="relative mt-4 space-y-3">
-                  <label className={`block text-xs uppercase tracking-[0.22em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
-                    Prompt
-                  </label>
-                  <textarea
-                    value={assistantPrompt}
-                    onChange={(event) => setAssistantPrompt(event.target.value)}
-                    rows={3}
-                    className="field resize-none text-sm"
-                    placeholder="Describe your project, audience, and goal..."
-                  />
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      "Luxury SaaS landing page",
-                      "AI lead qualification flow",
-                      "Agency rebrand strategy",
-                    ].map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => setAssistantPrompt(item)}
-                        className="chip px-3 py-1.5 text-[11px] text-[var(--text-soft)]"
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={handleAssistantSubmit}
-                      disabled={assistantLoading}
-                      className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-4 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {assistantLoading ? "Generating..." : "Generate Brief"}
-                    </button>
-                    <div className="chip px-3 py-1.5 text-[11px] text-[var(--text-soft)]">
-                      Powered by Groq
-                    </div>
-                  </div>
-                  <div className={`rounded-[1.25rem] border p-4 ${theme === "light" ? "border-black/10 bg-white/65" : "border-white/8 bg-white/[0.03]"}`}>
-                    <div className={`text-[11px] uppercase tracking-[0.22em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
-                      Assistant Output
-                    </div>
-                    <div className={`mt-2 text-sm leading-6 ${theme === "light" ? "text-[#2a2118]" : "text-white/82"}`}>
-                      {assistantReply}
-                    </div>
+                <div
+                  ref={assistantScrollRef}
+                  className="flex-1 overflow-y-auto px-4 py-4 sm:px-5"
+                >
+                  <div className="space-y-3">
+                    {assistantMessages.map((message) => {
+                      const isUser = message.role === "user";
+
+                      return (
+                        <div
+                          key={message.id}
+                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[85%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm ${
+                              isUser
+                                ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-white"
+                                : theme === "light"
+                                  ? "border border-black/5 bg-white/72 text-[#2a2118]"
+                                  : "border border-white/8 bg-white/[0.04] text-white/88"
+                            }`}
+                          >
+                            <div className="whitespace-pre-wrap">{message.content}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-            </div>
-          ) : null}
 
+                <div className="border-t border-white/5 bg-black/5 p-3 sm:p-4 dock-safe">
+                  {showAssistantSuggestions ? (
+                    <div className="-mx-1 mb-3 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1">
+                      {assistantSuggestions.map((item) => (
+                        <button
+                          key={item}
+                          type="button"
+                          onClick={() => setAssistantInput(item)}
+                          className="chip shrink-0 whitespace-nowrap px-3 py-1.5 text-[11px] text-[var(--text-soft)] shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void handleAssistantSubmit();
+                    }}
+                    className="relative"
+                  >
+                    <div className="flex items-center gap-2 rounded-[1.55rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.16)]">
+                      <input
+                        value={assistantInput}
+                        onChange={(event) => setAssistantInput(event.target.value)}
+                        className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]"
+                        placeholder="Message Studio AI..."
+                        aria-label="Message Studio AI"
+                      />
+                      <button
+                        type="submit"
+                        disabled={assistantLoading || !assistantInput.trim()}
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(0,0,0,0.2)] transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label="Send message"
+                      >
+                        ↑
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </section>
+            </div>
+          </>
+        ) : (
           <button
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              setAssistantDockOpen((current) => !current);
+              setAssistantDockOpen(true);
             }}
-            className={`assistant-fab inline-flex items-center gap-3 rounded-full border px-4 py-3 text-sm font-semibold backdrop-blur-xl transition-transform ${
+            className={`assistant-fab z-[90] inline-flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-xl transition-transform bottom-[6.5rem] sm:bottom-4 ${
               theme === "light"
                 ? "border-[rgba(170,136,66,0.16)] bg-[linear-gradient(135deg,rgba(252,246,233,0.96),rgba(244,234,213,0.9))] text-[#181310]"
                 : "border-white/10 bg-[linear-gradient(135deg,rgba(12,18,34,0.96),rgba(8,13,25,0.88))] text-[var(--text)]"
-            }`}
+              }`}
             aria-expanded={assistantDockOpen}
             aria-controls="assistant-dock"
+            aria-label="Open Studio AI"
             style={{
               position: "fixed",
               right: "1rem",
-              bottom: "1rem",
             }}
           >
             <span className="assistant-fab-glow" aria-hidden="true" />
             <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-base text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
               ✦
             </span>
-            <span className="relative">AI Brief</span>
-            <span className={`relative rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
-              theme === "light" ? "bg-black/5 text-[#7a6850]" : "bg-white/5 text-[var(--text-soft)]"
-            }`}>
-              Groq
-            </span>
           </button>
-        </div>
+        )}
 
         <section
           id="contact"
@@ -1721,24 +1983,27 @@ export default function AgencyHome() {
       </main>
 
       <div className="dock-safe fixed inset-x-0 bottom-0 z-40 surface-panel border-t border-white/10 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-3xl grid-cols-5 gap-1 px-3 py-2">
-          {[
-            { label: "Home", href: "#home", icon: "home" as const },
-            { label: "Services", href: "#services", icon: "services" as const },
-            { label: "Work", href: "#work", icon: "work" as const },
-            { label: "Chat", href: "#contact", icon: "chat" as const },
-            { label: "Contact", href: "#contact", icon: "contact" as const },
-          ].map((item) => (
+        <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1 px-3 py-2">
+          {mobileDockItems.map((item) => {
+            const isActive = activeSection === item.href.slice(1);
+
+            return (
             <a
               key={item.label}
               href={item.href}
               onClick={(event) => handleSmoothAnchor(event, item.href)}
-              className="flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] text-[var(--text-soft)] transition-colors hover:bg-white/5 hover:text-[var(--text)]"
+              aria-current={isActive ? "page" : undefined}
+              className={`bottom-dock-item relative flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] transition-all duration-300 ${
+                isActive
+                  ? "is-active bg-white/10 text-[var(--text)]"
+                  : "text-[var(--text-soft)] hover:bg-white/5 hover:text-[var(--text)]"
+              }`}
             >
-              <DockIcon variant={item.icon} />
+              <DockIcon variant={item.icon} className={isActive ? "scale-110" : ""} />
               <span>{item.label}</span>
             </a>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -1781,7 +2046,7 @@ export default function AgencyHome() {
                 }`}
                 aria-label="Close service details"
               >
-                ×
+                &times;
               </button>
             </div>
 
@@ -1868,7 +2133,7 @@ export default function AgencyHome() {
                 className="grid h-10 w-10 place-items-center rounded-full soft-border"
                 aria-label="Close review form"
               >
-                Ã—
+                &times;
               </button>
             </div>
             <form className="mt-6 space-y-4" onSubmit={handleReviewSubmit}>

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     if (!apiKey) {
       return NextResponse.json({
         reply:
-          "Groq is not configured yet. Add GROQ_API_KEY to `.env.local` and this assistant will generate project briefs, strategy notes, and launch plans.",
+          "Studio AI is not configured yet. Add GROQ_API_KEY to `.env.local` and this assistant will generate project briefs, strategy notes, and launch plans.",
       });
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     if (!response.ok) {
       const text = await response.text();
       return NextResponse.json(
-        { error: `Groq request failed: ${text}` },
+        { error: `Studio AI request failed: ${text}` },
         { status: response.status },
       );
     }

@@ -525,6 +525,34 @@ select {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+.bottom-dock-item {
+  isolation: isolate;
+  transform: translateZ(0);
+}
+
+.bottom-dock-item.is-active {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--accent-2) 18%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.bottom-dock-item.is-active::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-2) 24%, transparent) 0%, transparent 68%);
+  filter: blur(10px);
+  opacity: 0.9;
+  z-index: -1;
+  animation: dock-pulse 1.9s ease-in-out infinite;
+}
+
+.bottom-dock-item.is-active svg {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent-2) 35%, transparent));
+}
+
 .counter {
   font-variant-numeric: tabular-nums;
 }
@@ -830,6 +858,18 @@ select {
   100% {
     transform: translateX(45%);
     opacity: 0;
+  }
+}
+
+@keyframes dock-pulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
