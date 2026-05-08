@@ -96,6 +96,15 @@ const projectNames = [
   "Cloud Ops Revamp",
 ];
 
+const offerItems = [
+  "UI/UX Design & Product Experience",
+  "AI Automation & Intelligent Integrations",
+  "Custom SaaS Product Engineering",
+  "Creative Production & Content Strategy",
+  "Quality Assurance & Managed Support",
+  "Cloud Infrastructure & DevOps",
+];
+
 const stats = [
   { target: 120, suffix: "+", label: "Projects Delivered" },
   { target: 40, suffix: "+", label: "Happy Clients" },
@@ -279,6 +288,34 @@ function useCountUp({ target, suffix = "", active }: CounterProps) {
   return `${value}${suffix}`;
 }
 
+function useAnimatedNumber(target: number, active: boolean, duration = 1600) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+
+    const start = performance.now();
+    let raf = 0;
+
+    const tick = (time: number) => {
+      const progress = Math.min((time - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(target * eased));
+
+      if (progress < 1) {
+        raf = requestAnimationFrame(tick);
+      }
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [active, duration, target]);
+
+  return value;
+}
+
 function useInViewOnce<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
   const [active, setActive] = useState(false);
@@ -409,6 +446,9 @@ export default function AgencyHome() {
   const count40 = useCountUp({ target: stats[1].target, suffix: stats[1].suffix, active: statsVisible });
   const count8 = useCountUp({ target: stats[2].target, suffix: stats[2].suffix, active: statsVisible });
   const count99 = useCountUp({ target: stats[3].target, suffix: stats[3].suffix, active: statsVisible });
+  const widgetProgress = useAnimatedNumber(100, true, 1800);
+  const widgetLabel = widgetProgress < 100 ? "Building" : "Complete";
+  const [offerIndex, setOfferIndex] = useState(0);
 
   function handleSmoothAnchor(
     event: MouseEvent<HTMLAnchorElement>,
@@ -472,6 +512,14 @@ export default function AgencyHome() {
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [activeTeamCard, teamPopupRef]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setOfferIndex((current) => (current + 1) % offerItems.length);
+    }, 2400);
+
+    return () => window.clearInterval(interval);
+  }, []);
 
   async function handleAssistantSubmit() {
     setAssistantLoading(true);
@@ -741,66 +789,152 @@ export default function AgencyHome() {
             <div className="relative">
               <div className="absolute inset-0 -z-10 rounded-[2rem] bg-[radial-gradient(circle_at_top_left,rgba(108,99,255,0.24),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(0,212,170,0.18),transparent_45%)] blur-3xl" />
               <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-6">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(108,99,255,0.18),transparent_24%),radial-gradient(circle_at_82%_16%,rgba(53,227,177,0.1),transparent_22%),radial-gradient(circle_at_50%_100%,rgba(255,208,106,0.08),transparent_26%)]" />
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-[var(--text-soft)]">Live agency snapshot</div>
-                    <div className="mt-1 text-xl font-semibold tracking-tight">Nexvora Launch System</div>
+                    <div className="text-sm tracking-[0.18em] text-[var(--text-soft)] uppercase">
+                      Nexvora Launch Radar
+                    </div>
+                    <div className="mt-1 text-lg font-semibold tracking-tight text-[var(--text)]">
+                      Client satisfaction and services
+                    </div>
                   </div>
                   <div className="status-badge rounded-full px-3 py-1 text-xs font-semibold">
-                    Available Now
+                    {widgetLabel}
                   </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <div className="surface-panel rounded-3xl p-4">
-                    <div className="text-xs uppercase tracking-[0.2em] text-[var(--text-soft)]">
-                      Design Velocity
+                <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+                  <div className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(53,227,177,0.12),transparent_42%),radial-gradient(circle_at_center,rgba(143,131,255,0.08),transparent_66%)]" />
+                    <div className="relative flex items-center justify-between gap-3">
+                      <span className="text-[0.7rem] uppercase tracking-[0.24em] text-[var(--text-soft)]">Client Satisfaction</span>
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent-2)]">
+                        <span className="h-2 w-2 rounded-full bg-[var(--accent-2)] shadow-[0_0_18px_color-mix(in_srgb,var(--accent-2)_70%,transparent)]" />
+                        {widgetProgress}% complete
+                      </span>
                     </div>
-                    <div className="mt-3 text-4xl font-bold tracking-tight text-white">04x</div>
-                    <p className="mt-2 text-sm leading-6 text-[var(--text-soft)]">
-                      Faster decisions through strategy-led wireframes and modular design systems.
-                    </p>
+
+                    <div className="relative mt-4 flex aspect-square items-center justify-center">
+                      <div className="widget-radar-grid absolute inset-3 rounded-full border border-white/10" />
+                      <div className="widget-radar-grid absolute inset-9 rounded-full border border-white/10" />
+                      <div className="widget-radar-grid absolute inset-14 rounded-full border border-white/10" />
+                      <div className="widget-sweep absolute inset-0 rounded-full" />
+
+                      <svg
+                        viewBox="0 0 220 220"
+                        className="relative h-full w-full max-w-[15.5rem]"
+                        aria-hidden="true"
+                      >
+                        <defs>
+                          <linearGradient id="widget-ring" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="var(--accent)" />
+                            <stop offset="100%" stopColor="var(--accent-2)" />
+                          </linearGradient>
+                          <linearGradient id="widget-core" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="var(--accent-2)" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.06" />
+                          </linearGradient>
+                        </defs>
+
+                        <circle cx="110" cy="110" r="88" fill="none" stroke="rgba(154,170,214,0.09)" strokeWidth="1.25" />
+                        <circle cx="110" cy="110" r="62" fill="none" stroke="rgba(154,170,214,0.08)" strokeWidth="1" />
+
+                        <circle
+                          cx="110"
+                          cy="110"
+                          r="78"
+                          fill="none"
+                          stroke="url(#widget-ring)"
+                          strokeWidth="12"
+                          strokeLinecap="round"
+                          strokeDasharray={2 * Math.PI * 78}
+                          strokeDashoffset={(1 - widgetProgress / 100) * (2 * Math.PI * 78)}
+                          transform="rotate(-90 110 110)"
+                        />
+
+                        <circle cx="110" cy="110" r="44" fill="url(#widget-core)" opacity="0.9" />
+                        <circle cx="110" cy="110" r="30" fill="rgba(8, 13, 25, 0.9)" />
+
+                        {[
+                          { x: 110, y: 32 },
+                          { x: 164, y: 56 },
+                          { x: 184, y: 110 },
+                          { x: 164, y: 164 },
+                          { x: 110, y: 188 },
+                          { x: 56, y: 164 },
+                          { x: 36, y: 110 },
+                          { x: 56, y: 56 },
+                        ].map((node, index) => (
+                          <circle
+                            key={`${node.x}-${node.y}-${index}`}
+                            cx={node.x}
+                            cy={node.y}
+                            r={index % 2 === 0 ? 3 : 2.2}
+                            fill={index < Math.ceil((widgetProgress / 100) * 8) ? "var(--accent-2)" : "rgba(160,174,203,0.3)"}
+                          />
+                        ))}
+
+                        <circle cx="184" cy="110" r="4.5" fill="var(--accent-2)" opacity="0.95" />
+                        <line
+                          x1="110"
+                          y1="110"
+                          x2="184"
+                          y2="110"
+                          stroke="rgba(53,227,177,0.9)"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          className="widget-sweep-arm"
+                        />
+                      </svg>
+
+                      <div className="absolute flex h-28 w-28 flex-col items-center justify-center rounded-full border border-white/10 bg-[color-mix(in_srgb,var(--bg-elevated)_78%,transparent)] text-center shadow-[0_0_40px_rgba(0,0,0,0.28)] backdrop-blur">
+                        <div className="text-4xl font-semibold tracking-tight text-[var(--text)]">
+                          {widgetProgress}
+                        </div>
+                        <div className="mt-1 text-[0.62rem] uppercase tracking-[0.28em] text-[var(--text-soft)]">
+                          Percent
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="surface-panel rounded-3xl p-4">
-                    <div className="text-xs uppercase tracking-[0.2em] text-[var(--text-soft)]">
-                      Delivery Stack
+
+                  <div className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-[0.7rem] uppercase tracking-[0.24em] text-[var(--text-soft)]">What We Offer</div>
+                      <div className="text-sm font-semibold text-[var(--accent-2)]">
+                        {String(offerIndex + 1).padStart(2, "0")}/{offerItems.length}
+                      </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {["Next.js", "Tailwind", "Groq", "Cloud"].map((pill) => (
-                        <span
-                          key={pill}
-                          className="chip px-3 py-1 text-xs text-[var(--text)]"
-                        >
-                          {pill}
-                        </span>
-                      ))}
+
+                    <div className="mt-4 rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="max-w-[18rem]">
+                          <div className="text-[0.65rem] uppercase tracking-[0.26em] text-[var(--text-soft)]">
+                            Featured capability
+                          </div>
+                          <div className="mt-2 text-2xl font-semibold leading-8 tracking-tight text-[var(--text)]">
+                            {offerItems[offerIndex]}
+                          </div>
+                        </div>
+                        <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold tracking-[0.18em] text-[var(--text-soft)]">
+                          {String(offerIndex + 1).padStart(2, "0")}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center gap-2">
+                        {offerItems.map((_, index) => (
+                          <span
+                            key={index}
+                            className={`h-1.5 rounded-full transition-all duration-300 ${
+                              index === offerIndex ? "w-8 bg-[var(--accent-2)]" : "w-2 bg-white/20"
+                            }`}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-[var(--text-soft)]">
-                      Built to move from concept to launch without losing quality or momentum.
-                    </p>
                   </div>
                 </div>
-
-                <div className="progress-shell mt-4 rounded-3xl p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[var(--text-soft)]">Client pulse</span>
-                    <span className="status-copy text-xs font-semibold">98% retained clients</span>
-                  </div>
-                  <div className="progress-track mt-4 h-2 rounded-full">
-                    <div className="progress-fill h-2 w-[82%] rounded-full" />
-                  </div>
-                  <div className="mt-3 text-sm text-[var(--text-soft)]">
-                    We keep the team close, communicate clearly, and ship in visible milestones.
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
-                {["Brand systems", "Product UX", "Cloud launch"].map((item) => (
-                  <div key={item} className="surface-panel rounded-2xl px-4 py-3 text-sm text-[var(--text-soft)]">
-                    {item}
-                  </div>
-                ))}
               </div>
             </div>
           </div>
@@ -893,23 +1027,20 @@ export default function AgencyHome() {
             </p>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[0.98fr_1.02fr]">
-            <div className="surface-panel-strong rounded-[2rem] p-6">
+          <div className="flex flex-col gap-6">
+            <div className="surface-panel-strong rounded-[2rem] p-6 xl:w-[calc(50vw+50%)] xl:max-w-none xl:rounded-l-[2rem] xl:rounded-r-none">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm text-[var(--text-soft)]">Client logos</div>
-                  <div className="text-xl font-semibold">Trusted by product teams</div>
-                </div>
-                <div className="chip px-3 py-1 text-xs text-[var(--text-soft)]">
-                  Grayscale to color on hover
+                  <div className="text-sm text-[var(--text-soft)]">Project names</div>
+                  <div className="text-xl font-semibold">Launches with visible momentum</div>
                 </div>
               </div>
-              <div className="marquee">
-                <div className="marquee-track">
-                  {[...clientNames, ...clientNames].map((name, index) => (
+              <div className="marquee project-marquee">
+                <div className="marquee-track reverse">
+                  {projectPills.map((name, index) => (
                     <div
-                      key={`${name}-logo-${index}`}
-                      className="surface-panel flex h-12 min-w-[11.5rem] items-center justify-center rounded-[1.25rem] px-5 text-base font-semibold text-[var(--text-soft)] transition-all hover:text-[var(--text)]"
+                      key={`${name}-pill-${index}`}
+                      className="chip flex h-12 min-w-[7.5rem] items-center justify-center px-4 py-3 text-xs font-medium text-[var(--text)] sm:min-w-[10rem] sm:px-5 sm:text-sm lg:min-w-[12rem] lg:text-base"
                     >
                       {name}
                     </div>
@@ -918,39 +1049,24 @@ export default function AgencyHome() {
               </div>
             </div>
 
-            <div className="surface-panel-strong rounded-[2rem] p-6">
+            <div className="surface-panel-strong rounded-[2rem] p-6 xl:ml-[calc(50%-50vw)] xl:w-[calc(50vw+50%)] xl:max-w-none xl:rounded-l-none xl:rounded-r-[2rem]">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm text-[var(--text-soft)]">Project names</div>
-                  <div className="text-xl font-semibold">Launches with visible momentum</div>
-                </div>
-                <div className="chip px-3 py-1 text-xs text-[var(--text-soft)]">
-                  Smooth infinite scroll
+                  <div className="text-sm text-[var(--text-soft)]">Client logos</div>
+                  <div className="text-xl font-semibold">Trusted by product teams</div>
                 </div>
               </div>
-              <div className="marquee">
-                <div className="marquee-track reverse">
-                  {projectPills.map((name, index) => (
+              <div className="marquee project-marquee">
+                <div className="marquee-track">
+                  {[...clientNames, ...clientNames].map((name, index) => (
                     <div
-                      key={`${name}-pill-${index}`}
-                      className="chip flex h-12 min-w-[12rem] items-center justify-center px-5 py-3 text-sm font-medium text-[var(--text)]"
+                      key={`${name}-logo-${index}`}
+                      className="surface-panel flex h-12 min-w-[9.5rem] items-center justify-center rounded-[1.25rem] px-4 text-sm font-semibold text-[var(--text-soft)] transition-all hover:text-[var(--text)] sm:min-w-[11.5rem] sm:px-5 sm:text-base"
                     >
                       {name}
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {[
-                  "Conversion lift: 3x",
-                  "Load time improved: 42%",
-                  "Organic visits: 100k+",
-                  "Time to market: 2x faster",
-                ].map((item) => (
-                  <div key={item} className="surface-panel rounded-2xl px-4 py-3 text-sm text-[var(--text-soft)]">
-                    {item}
-                  </div>
-                ))}
               </div>
             </div>
           </div>
