@@ -51,9 +51,9 @@ const services = [
       "End-to-end SaaS design and development from MVP foundations to scale-ready product systems.",
   },
   {
-    title: "Custom Development",
+    title: "Content Creation",
     description:
-      "Tailored full-stack web and mobile apps engineered around your exact goals and workflows.",
+      "Short-form video editing, branded content, motion graphics, and polished production workflows built to keep your story moving.",
   },
   {
     title: "Product Testing",
@@ -280,7 +280,10 @@ function useCountUp({ target, suffix = "", active, delayMs = 0 }: CounterProps) 
       }
 
       const progress = Math.min((time - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased =
+        progress < 0.8
+          ? 1 - Math.pow(1 - progress / 0.8, 3) * 0.2
+          : 0.8 + (1 - Math.pow(1 - (progress - 0.8) / 0.2, 2)) * 0.2;
       setValue(Math.round(target * eased));
       if (progress < 1) {
         raf = requestAnimationFrame(tick);
