@@ -694,6 +694,45 @@ select {
   animation: widget-ripples 2.1s linear infinite;
 }
 
+.assistant-fab {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+  animation: assistant-drift 5.8s ease-in-out infinite;
+}
+
+.assistant-fab::before {
+  content: "";
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, 0.22) 50%, transparent 62%);
+  transform: translateX(-45%);
+  animation: assistant-glare 4.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.assistant-fab::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.2), transparent 26%);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.assistant-fab-glow {
+  position: absolute;
+  inset: -12px;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 68%);
+  filter: blur(10px);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
 .widget-water-gloss {
   background:
     linear-gradient(110deg, rgba(255, 255, 255, 0.16), transparent 30%),
@@ -766,6 +805,34 @@ select {
   }
 }
 
+@keyframes assistant-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes assistant-glare {
+  0% {
+    transform: translateX(-45%);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.65;
+  }
+  45% {
+    transform: translateX(45%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(45%);
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -779,7 +846,11 @@ select {
   .widget-water-fill::before,
   .widget-water-flow,
   .widget-water-surface,
-  .widget-water-ripples {
+  .widget-water-ripples,
+  .assistant-fab,
+  .assistant-fab::before,
+  .assistant-fab::after,
+  .assistant-fab-glow {
     animation: none !important;
     transition: none !important;
   }

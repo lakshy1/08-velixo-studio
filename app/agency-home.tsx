@@ -496,6 +496,7 @@ export default function AgencyHome() {
     "Ask the AI concierge to shape a project brief, strategy angle, or launch plan.",
   );
   const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantDockOpen, setAssistantDockOpen] = useState(false);
   const [selectedRating, setSelectedRating] = useState(5);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [activeTeamCard, setActiveTeamCard] = useState<string | null>(null);
@@ -599,7 +600,7 @@ export default function AgencyHome() {
   }, [activeTeamCard, teamPopupRef]);
 
   useEffect(() => {
-    if (activeServiceIndex === null && !reviewModalOpen) {
+    if (activeServiceIndex === null && !reviewModalOpen && !assistantDockOpen) {
       return;
     }
 
@@ -612,7 +613,7 @@ export default function AgencyHome() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeServiceIndex, reviewModalOpen]);
+  }, [activeServiceIndex, reviewModalOpen, assistantDockOpen]);
 
   useEffect(() => {
     if (activeServiceIndex === null && !reviewModalOpen) {
@@ -1309,84 +1310,137 @@ export default function AgencyHome() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-            <div className="surface-panel-strong rounded-[2rem] p-6">
-              <div className="section-kicker">
-                AI Concierge
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)]">
-                Let Groq shape a quick project brief in seconds.
-              </h2>
-              <p className="mt-3 max-w-xl text-[var(--text-soft)]">
-                This is wired to your <code>GROQ_API_KEY</code> env variable and the Groq OpenAI-compatible endpoint.
-              </p>
-              <label className="mt-6 block text-sm font-medium text-[var(--text-soft)]">
-                Prompt
-              </label>
-              <textarea
-                value={assistantPrompt}
-                onChange={(event) => setAssistantPrompt(event.target.value)}
-                rows={6}
-                className="field mt-2 resize-none"
-                placeholder="Describe your project, audience, and goal..."
-              />
-              <div className="mt-4 flex flex-wrap gap-3">
-                {[
-                  "Luxury SaaS landing page",
-                  "AI lead qualification flow",
-                  "Agency rebrand strategy",
-                ].map((item) => (
+        <div
+          className="fixed inset-0 z-[66]"
+          onClick={() => setAssistantDockOpen(false)}
+        >
+          {assistantDockOpen ? (
+            <div
+              id="assistant-dock"
+              className={`w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-[1.75rem] border shadow-[0_30px_80px_rgba(0,0,0,0.42)] ${
+                theme === "light"
+                  ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.995),rgba(244,234,213,0.985))] text-[#181310]"
+                  : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
+                }`}
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                position: "fixed",
+                right: "1rem",
+                bottom: "4.5rem",
+              }}
+            >
+              <div className="relative overflow-hidden px-4 py-4 sm:px-5">
+                <div className={`absolute inset-0 opacity-40 ${theme === "light" ? "bg-[radial-gradient(circle_at_20%_10%,rgba(226,191,103,0.25),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(143,116,37,0.18),transparent_24%)]" : "bg-[radial-gradient(circle_at_18%_12%,rgba(143,131,255,0.22),transparent_28%),radial-gradient(circle_at_82%_0%,rgba(53,227,177,0.18),transparent_24%)]"}`} />
+                <div className="relative flex items-start justify-between gap-3">
+                  <div>
+                    <div className={`text-xs uppercase tracking-[0.28em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
+                      AI Concierge
+                    </div>
+                    <div className={`mt-2 text-lg font-semibold ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
+                      Groq Brief Builder
+                    </div>
+                    <p className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#7a6850]" : "text-white/56"}`}>
+                      Shape a polished project brief without leaving the page.
+                    </p>
+                  </div>
                   <button
-                    key={item}
                     type="button"
-                    onClick={() => setAssistantPrompt(item)}
-                    className="chip px-4 py-2 text-sm text-[var(--text-soft)]"
+                    onClick={() => setAssistantDockOpen(false)}
+                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors ${
+                      theme === "light"
+                        ? "border-black/10 bg-white/70 text-[#181310] hover:bg-white"
+                        : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
+                    }`}
+                    aria-label="Close AI concierge"
                   >
-                    {item}
+                    ×
                   </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={handleAssistantSubmit}
-                disabled={assistantLoading}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {assistantLoading ? "Generating..." : "Generate Brief"}
-              </button>
-            </div>
+                </div>
 
-            <div className="surface-panel-strong rounded-[2rem] p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="section-kicker">
-                    Assistant Output
+                <div className="relative mt-4 space-y-3">
+                  <label className={`block text-xs uppercase tracking-[0.22em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
+                    Prompt
+                  </label>
+                  <textarea
+                    value={assistantPrompt}
+                    onChange={(event) => setAssistantPrompt(event.target.value)}
+                    rows={3}
+                    className="field resize-none text-sm"
+                    placeholder="Describe your project, audience, and goal..."
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Luxury SaaS landing page",
+                      "AI lead qualification flow",
+                      "Agency rebrand strategy",
+                    ].map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => setAssistantPrompt(item)}
+                        className="chip px-3 py-1.5 text-[11px] text-[var(--text-soft)]"
+                      >
+                        {item}
+                      </button>
+                    ))}
                   </div>
-                  <div className="mt-2 text-xl font-semibold">Strategy answer</div>
-                </div>
-                <div className="chip px-3 py-1 text-xs text-[var(--text-soft)]">
-                  Powered by Groq
-                </div>
-              </div>
-              <div className="mt-5 rounded-[1.5rem] surface-panel p-5 text-sm leading-8 text-[var(--text)]">
-                {assistantReply}
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {[
-                  "Project scope clarity",
-                  "Launch timeline framing",
-                  "Recommended services",
-                  "Conversion ideas",
-                ].map((item) => (
-                  <div key={item} className="surface-panel rounded-2xl px-4 py-3 text-sm text-[var(--text-soft)]">
-                    {item}
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={handleAssistantSubmit}
+                      disabled={assistantLoading}
+                      className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-4 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {assistantLoading ? "Generating..." : "Generate Brief"}
+                    </button>
+                    <div className="chip px-3 py-1.5 text-[11px] text-[var(--text-soft)]">
+                      Powered by Groq
+                    </div>
                   </div>
-                ))}
+                  <div className={`rounded-[1.25rem] border p-4 ${theme === "light" ? "border-black/10 bg-white/65" : "border-white/8 bg-white/[0.03]"}`}>
+                    <div className={`text-[11px] uppercase tracking-[0.22em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
+                      Assistant Output
+                    </div>
+                    <div className={`mt-2 text-sm leading-6 ${theme === "light" ? "text-[#2a2118]" : "text-white/82"}`}>
+                      {assistantReply}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setAssistantDockOpen((current) => !current);
+            }}
+            className={`assistant-fab inline-flex items-center gap-3 rounded-full border px-4 py-3 text-sm font-semibold backdrop-blur-xl transition-transform ${
+              theme === "light"
+                ? "border-[rgba(170,136,66,0.16)] bg-[linear-gradient(135deg,rgba(252,246,233,0.96),rgba(244,234,213,0.9))] text-[#181310]"
+                : "border-white/10 bg-[linear-gradient(135deg,rgba(12,18,34,0.96),rgba(8,13,25,0.88))] text-[var(--text)]"
+            }`}
+            aria-expanded={assistantDockOpen}
+            aria-controls="assistant-dock"
+            style={{
+              position: "fixed",
+              right: "1rem",
+              bottom: "1rem",
+            }}
+          >
+            <span className="assistant-fab-glow" aria-hidden="true" />
+            <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-base text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
+              ✦
+            </span>
+            <span className="relative">AI Brief</span>
+            <span className={`relative rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.18em] ${
+              theme === "light" ? "bg-black/5 text-[#7a6850]" : "bg-white/5 text-[var(--text-soft)]"
+            }`}>
+              Groq
+            </span>
+          </button>
+        </div>
 
         <section
           id="contact"
