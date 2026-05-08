@@ -497,7 +497,7 @@ select {
   transform-style: preserve-3d;
 }
 
-.flip-card:hover .flip-inner {
+.flip-card.is-flipped .flip-inner {
   transform: rotateY(180deg);
 }
 

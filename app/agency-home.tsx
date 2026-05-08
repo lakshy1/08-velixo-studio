@@ -398,6 +398,7 @@ export default function AgencyHome() {
 
   const [statsRef, statsVisible] = useInViewOnce<HTMLDivElement>();
   const [workRef, workVisible] = useInViewOnce<HTMLDivElement>();
+  const teamPopupRef = useRef<HTMLDivElement | null>(null);
 
   const projectPills = useMemo(
     () => [...projectNames, ...projectNames],
@@ -451,6 +452,26 @@ export default function AgencyHome() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!activeTeamCard) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (teamPopupRef.current && !teamPopupRef.current.contains(target)) {
+        setActiveTeamCard(null);
+      }
+    };
+
+    window.addEventListener("pointerdown", onPointerDown);
+    return () => window.removeEventListener("pointerdown", onPointerDown);
+  }, [activeTeamCard, teamPopupRef]);
 
   async function handleAssistantSubmit() {
     setAssistantLoading(true);
@@ -791,41 +812,6 @@ export default function AgencyHome() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="section-shell rounded-[2rem] p-4">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="surface-panel rounded-[1.5rem] p-4">
-                <div className="marquee">
-                  <div className="marquee-track">
-                    {[...clientNames, ...clientNames].map((name, index) => (
-                      <div
-                        key={`${name}-${index}`}
-                        className="chip flex h-14 min-w-[10rem] items-center justify-center rounded-2xl px-5 text-sm font-medium text-[var(--text-soft)]"
-                      >
-                        {name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="surface-panel rounded-[1.5rem] p-4">
-                <div className="marquee">
-                  <div className="marquee-track reverse">
-                    {[...projectPills, ...projectPills].map((name, index) => (
-                      <div
-                        key={`${name}-${index}`}
-                        className="chip flex h-14 min-w-[10rem] items-center justify-center rounded-full px-5 text-sm font-medium text-[var(--text)]"
-                      >
-                        {name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section ref={statsRef} className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid gap-4 rounded-[2rem] section-shell p-5 md:grid-cols-4">
             {[
@@ -871,15 +857,15 @@ export default function AgencyHome() {
                 className="group hover-lift relative overflow-hidden rounded-[1.6rem] surface-panel-strong p-5"
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,99,255,0.16),transparent_36%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="relative flex h-full min-h-[14rem] flex-col justify-between gap-5">
+                <div className="relative flex h-full min-h-[12.5rem] flex-col justify-between gap-4">
                   <div className="flex items-start gap-4">
                     <ServiceIcon index={index} />
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <h3 className="text-xl font-semibold text-[var(--text)]">{service.title}</h3>
-                      <p className="text-sm leading-7 text-[var(--text-soft)]">{service.description}</p>
+                      <p className="max-w-[22rem] text-sm leading-6 text-[var(--text-soft)]">{service.description}</p>
                     </div>
                   </div>
-                  <div className="inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
+                  <div className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
                     Learn More <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </div>
@@ -918,30 +904,16 @@ export default function AgencyHome() {
                   Grayscale to color on hover
                 </div>
               </div>
-              <div className="space-y-5 pb-2">
-                <div className="marquee">
-                  <div className="marquee-track">
-                    {[...clientNames, ...clientNames].map((name, index) => (
-                      <div
-                        key={`${name}-logo-a-${index}`}
-                        className="surface-panel flex h-12 min-w-[11.5rem] items-center justify-center rounded-[1.25rem] px-5 text-base font-semibold text-[var(--text-soft)] transition-all hover:text-[var(--text)]"
-                      >
-                        {name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="marquee">
-                  <div className="marquee-track reverse">
-                    {[...clientNames, ...clientNames].map((name, index) => (
-                      <div
-                        key={`${name}-logo-b-${index}`}
-                        className="surface-panel flex h-12 min-w-[11.5rem] items-center justify-center rounded-[1.25rem] px-5 text-base font-semibold text-[var(--text-soft)] transition-all hover:text-[var(--text)]"
-                      >
-                        {name}
-                      </div>
-                    ))}
-                  </div>
+              <div className="marquee">
+                <div className="marquee-track">
+                  {[...clientNames, ...clientNames].map((name, index) => (
+                    <div
+                      key={`${name}-logo-${index}`}
+                      className="surface-panel flex h-12 min-w-[11.5rem] items-center justify-center rounded-[1.25rem] px-5 text-base font-semibold text-[var(--text-soft)] transition-all hover:text-[var(--text)]"
+                    >
+                      {name}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -958,7 +930,7 @@ export default function AgencyHome() {
               </div>
               <div className="marquee">
                 <div className="marquee-track reverse">
-                  {[...projectNames, ...projectNames].map((name, index) => (
+                  {projectPills.map((name, index) => (
                     <div
                       key={`${name}-pill-${index}`}
                       className="chip flex h-12 min-w-[12rem] items-center justify-center px-5 py-3 text-sm font-medium text-[var(--text)]"
@@ -1046,7 +1018,7 @@ export default function AgencyHome() {
             </p>
           </div>
 
-          <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2">
+          <div ref={teamPopupRef} className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2">
             {team.map((member) => (
               <article key={member.name} className={`flip-card rounded-[1.6rem] ${activeTeamCard === member.name ? "is-flipped" : ""}`}>
                 <div className="flip-inner relative h-full min-h-[24rem]">
@@ -1058,10 +1030,11 @@ export default function AgencyHome() {
                       <button
                         type="button"
                         onClick={() => setActiveTeamCard((current) => (current === member.name ? null : member.name))}
-                        className="chip px-3 py-1 text-xs text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
+                        className="chip flex h-10 w-10 items-center justify-center text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
                         aria-pressed={activeTeamCard === member.name}
+                        aria-label="Flip card"
                       >
-                        Flip Card
+                        ↺
                       </button>
                     </div>
                     <div className="mt-6 space-y-3">
@@ -1090,9 +1063,10 @@ export default function AgencyHome() {
                       <button
                         type="button"
                         onClick={() => setActiveTeamCard((current) => (current === member.name ? null : member.name))}
-                        className="chip px-4 py-3 text-sm font-semibold text-[var(--text)]"
+                        className="chip flex h-10 w-10 items-center justify-center text-sm font-semibold text-[var(--text)]"
+                        aria-label="Flip to bio"
                       >
-                        Flip to Bio
+                        ↻
                       </button>
                     </div>
                   </div>
@@ -1104,9 +1078,10 @@ export default function AgencyHome() {
                       <button
                         type="button"
                         onClick={() => setActiveTeamCard(null)}
-                        className="chip px-3 py-1 text-xs text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
+                        className="chip flex h-10 w-10 items-center justify-center text-xs text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
+                        aria-label="Close bio"
                       >
-                        Back
+                        ✕
                       </button>
                     </div>
                     <p className="mt-4 text-base leading-8 text-[var(--text)]">{member.bio}</p>
@@ -1147,8 +1122,8 @@ export default function AgencyHome() {
 
           <div className="grid gap-4 lg:grid-cols-3">
             {reviews.map((review) => (
-              <article key={review.id} className="surface-panel-strong rounded-[1.6rem] p-5">
-                <div className="flex items-center justify-between">
+              <article key={review.id} className="surface-panel-strong flex h-full min-h-[18rem] flex-col justify-between rounded-[1.6rem] p-5">
+                <div className="flex items-center justify-between gap-4">
                   <div className="flex gap-1 text-amber-300">
                     {Array.from({ length: 5 }).map((_, index) => (
                       <span key={index} aria-hidden="true">
@@ -1158,8 +1133,8 @@ export default function AgencyHome() {
                   </div>
                   <div className="text-xs text-[var(--text-soft)]">{review.date}</div>
                 </div>
-                <p className="mt-4 text-sm leading-7 text-[var(--text)]">{review.text}</p>
-                <div className="mt-6 flex items-center gap-3">
+                <p className="mt-5 flex-1 text-sm leading-7 text-[var(--text)]">{review.text}</p>
+                <div className="mt-8 flex items-center gap-3">
                   <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(108,99,255,0.22),rgba(0,212,170,0.18))] text-sm font-bold text-white">
                     {review.initials}
                   </div>
@@ -1412,7 +1387,7 @@ export default function AgencyHome() {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2 lg:auto-rows-min">
             {faqs.map((faq, index) => {
               const expanded = activeFaq === index;
 
@@ -1421,7 +1396,9 @@ export default function AgencyHome() {
                   key={faq.question}
                   type="button"
                   onClick={() => setActiveFaq(expanded ? null : index)}
-                  className="surface-panel-strong rounded-[1.6rem] p-5 text-left"
+                  className={`surface-panel-strong rounded-[1.6rem] p-5 text-left transition-all duration-300 ${
+                    expanded ? "lg:col-span-2" : "lg:col-span-1"
+                  }`}
                 >
                   <div className="flex items-center justify-between gap-4">
                     <h3 className="text-lg font-semibold text-[var(--text)]">{faq.question}</h3>
