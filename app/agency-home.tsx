@@ -7,6 +7,7 @@ type CounterProps = {
   target: number;
   suffix?: string;
   active: boolean;
+  delayMs?: number;
 };
 
 type Review = {
@@ -106,10 +107,10 @@ const offerItems = [
 ];
 
 const stats = [
-  { target: 120, suffix: "+", label: "Projects Delivered" },
-  { target: 40, suffix: "+", label: "Happy Clients" },
-  { target: 8, suffix: "+", label: "Years of Experience" },
-  { target: 99, suffix: "%", label: "Client Satisfaction" },
+  { target: 50, suffix: "+", label: "Projects" },
+  { target: 20, suffix: "+", label: "Clients" },
+  { target: 5, suffix: "+", label: "Years of Experience" },
+  { target: 100, suffix: "%", label: "Client Satisfaction" },
 ];
 
 const processSteps = [
@@ -260,7 +261,7 @@ function scrollToSection(href: string) {
   window.requestAnimationFrame(step);
 }
 
-function useCountUp({ target, suffix = "", active }: CounterProps) {
+function useCountUp({ target, suffix = "", active, delayMs = 0 }: CounterProps) {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
@@ -268,11 +269,16 @@ function useCountUp({ target, suffix = "", active }: CounterProps) {
       return;
     }
 
-    const start = performance.now();
-    const duration = 1200;
+    const start = performance.now() + delayMs;
+    const duration = 1600;
     let raf = 0;
 
     const tick = (time: number) => {
+      if (time < start) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
       const progress = Math.min((time - start) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setValue(Math.round(target * eased));
@@ -283,7 +289,7 @@ function useCountUp({ target, suffix = "", active }: CounterProps) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [active, target]);
+  }, [active, delayMs, target]);
 
   return `${value}${suffix}`;
 }
@@ -442,10 +448,10 @@ export default function AgencyHome() {
     [],
   );
 
-  const count120 = useCountUp({ target: stats[0].target, suffix: stats[0].suffix, active: statsVisible });
-  const count40 = useCountUp({ target: stats[1].target, suffix: stats[1].suffix, active: statsVisible });
-  const count8 = useCountUp({ target: stats[2].target, suffix: stats[2].suffix, active: statsVisible });
-  const count99 = useCountUp({ target: stats[3].target, suffix: stats[3].suffix, active: statsVisible });
+  const count50 = useCountUp({ target: stats[0].target, suffix: stats[0].suffix, active: statsVisible, delayMs: 300 });
+  const count20 = useCountUp({ target: stats[1].target, suffix: stats[1].suffix, active: statsVisible, delayMs: 600 });
+  const count5 = useCountUp({ target: stats[2].target, suffix: stats[2].suffix, active: statsVisible, delayMs: 900 });
+  const count100 = useCountUp({ target: stats[3].target, suffix: stats[3].suffix, active: statsVisible, delayMs: 1200 });
   const widgetProgress = useAnimatedNumber(100, true, 1800);
   const [offerIndex, setOfferIndex] = useState(0);
   function handleSmoothAnchor(
@@ -810,13 +816,14 @@ export default function AgencyHome() {
                     </div>
 
                     <div className="relative mt-4 flex min-h-[14.5rem] flex-1 items-center justify-center">
-                      <div className="widget-water-tank absolute inset-x-[24%] top-[7%] bottom-[8%] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,28,0.9),rgba(9,14,28,0.7))] shadow-[inset_0_0_20px_rgba(255,255,255,0.03)]">
+                      <div className="widget-water-tank absolute inset-x-[29%] top-[8%] bottom-[8%] overflow-hidden rounded-full border border-white/18 bg-[linear-gradient(180deg,rgba(9,14,28,0.96),rgba(9,14,28,0.7))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_18px_34px_rgba(0,0,0,0.16)]">
                         <div
                           className="widget-water-fill absolute inset-x-0 bottom-0"
                           style={{ height: `${widgetProgress}%` }}
                         >
                           <div className="widget-water-flow absolute inset-0" />
-                          <div className="widget-water-surface absolute inset-x-0 top-0 h-8" />
+                          <div className="widget-water-surface absolute inset-x-0 top-0 h-10" />
+                          <div className="widget-water-ripples absolute inset-x-0 top-0 h-14" />
                         </div>
                         <div className="widget-water-gloss absolute inset-0" />
                       </div>
@@ -876,10 +883,10 @@ export default function AgencyHome() {
         <section ref={statsRef} className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid gap-4 rounded-[2rem] section-shell p-5 md:grid-cols-4">
             {[
-              { value: count120, label: stats[0].label },
-              { value: count40, label: stats[1].label },
-              { value: count8, label: stats[2].label },
-              { value: count99, label: stats[3].label },
+              { value: count50, label: stats[0].label },
+              { value: count20, label: stats[1].label },
+              { value: count5, label: stats[2].label },
+              { value: count100, label: stats[3].label },
             ].map((item) => (
               <div
                 key={item.label}

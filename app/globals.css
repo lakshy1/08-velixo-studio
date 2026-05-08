@@ -598,6 +598,35 @@ select {
 
 .widget-water-tank {
   isolation: isolate;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 12px 0 24px rgba(255, 255, 255, 0.025),
+    inset -12px 0 24px rgba(0, 0, 0, 0.16);
+}
+
+.widget-water-tank::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.05)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 16%, transparent 84%, rgba(0, 0, 0, 0.16));
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+.widget-water-tank::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.08), transparent 28%),
+    radial-gradient(circle at 50% 100%, rgba(0, 0, 0, 0.2), transparent 34%);
+  pointer-events: none;
+  opacity: 0.9;
 }
 
 .widget-water-fill {
@@ -637,13 +666,32 @@ select {
 
 .widget-water-surface {
   background:
-    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.45) 0 11%, transparent 12%),
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.28) 0 13%, transparent 14%),
-    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.38) 0 11%, transparent 12%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.02));
-  filter: blur(1.5px);
-  opacity: 0.9;
-  animation: widget-surface 2.8s ease-in-out infinite;
+    radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.6) 0 11%, transparent 12%),
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.42) 0 13%, transparent 14%),
+    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.56) 0 11%, transparent 12%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.03));
+  filter: blur(0.8px);
+  opacity: 1;
+  animation: widget-surface 2.4s ease-in-out infinite;
+}
+
+.widget-water-ripples {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.32) 0 10px,
+      rgba(255, 255, 255, 0.08) 10px 18px,
+      transparent 18px 28px
+    ),
+    radial-gradient(circle at 18% 72%, rgba(255, 255, 255, 0.34) 0 13%, transparent 14%),
+    radial-gradient(circle at 50% 82%, rgba(255, 255, 255, 0.26) 0 15%, transparent 16%),
+    radial-gradient(circle at 82% 70%, rgba(255, 255, 255, 0.3) 0 13%, transparent 14%);
+  background-size: 180% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+  mix-blend-mode: screen;
+  filter: blur(0.35px);
+  opacity: 0.95;
+  animation: widget-ripples 2.1s linear infinite;
 }
 
 .widget-water-gloss {
@@ -709,6 +757,15 @@ select {
   }
 }
 
+@keyframes widget-ripples {
+  from {
+    background-position: 0 0, 0 0, 0 0, 0 0;
+  }
+  to {
+    background-position: 180px 0, 22px 0, -16px 0, 38px 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -721,7 +778,8 @@ select {
   .widget-water-fill,
   .widget-water-fill::before,
   .widget-water-flow,
-  .widget-water-surface {
+  .widget-water-surface,
+  .widget-water-ripples {
     animation: none !important;
     transition: none !important;
   }
