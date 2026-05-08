@@ -447,9 +447,7 @@ export default function AgencyHome() {
   const count8 = useCountUp({ target: stats[2].target, suffix: stats[2].suffix, active: statsVisible });
   const count99 = useCountUp({ target: stats[3].target, suffix: stats[3].suffix, active: statsVisible });
   const widgetProgress = useAnimatedNumber(100, true, 1800);
-  const widgetLabel = widgetProgress < 100 ? "Building" : "Complete";
   const [offerIndex, setOfferIndex] = useState(0);
-
   function handleSmoothAnchor(
     event: MouseEvent<HTMLAnchorElement>,
     href: string,
@@ -494,6 +492,14 @@ export default function AgencyHome() {
   }, [mobileOpen]);
 
   useEffect(() => {
+    const interval = window.setInterval(() => {
+      setOfferIndex((current) => (current + 1) % offerItems.length);
+    }, 2400);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     if (!activeTeamCard) {
       return;
     }
@@ -512,14 +518,6 @@ export default function AgencyHome() {
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [activeTeamCard, teamPopupRef]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setOfferIndex((current) => (current + 1) % offerItems.length);
-    }, 2400);
-
-    return () => window.clearInterval(interval);
-  }, []);
 
   async function handleAssistantSubmit() {
     setAssistantLoading(true);
@@ -748,7 +746,7 @@ export default function AgencyHome() {
               </div>
 
               <div className="space-y-6">
-                <h1 className="section-title max-w-4xl text-5xl font-bold leading-[0.95] tracking-tight text-[var(--text)] sm:text-6xl lg:text-[5.3rem]">
+                <h1 className="section-title max-w-4xl text-5xl font-bold leading-[0.96] tracking-tight text-[var(--text)] sm:text-6xl lg:text-[4.9rem]">
                   We Build Digital Products That Scale
                 </h1>
                 <p className="max-w-2xl text-lg leading-8 text-[var(--text-soft)] sm:text-xl">
@@ -788,150 +786,79 @@ export default function AgencyHome() {
 
             <div className="relative">
               <div className="absolute inset-0 -z-10 rounded-[2rem] bg-[radial-gradient(circle_at_top_left,rgba(108,99,255,0.24),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(0,212,170,0.18),transparent_45%)] blur-3xl" />
-              <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-6">
+              <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-6 xl:h-auto xl:min-h-0">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(108,99,255,0.18),transparent_24%),radial-gradient(circle_at_82%_16%,rgba(53,227,177,0.1),transparent_22%),radial-gradient(circle_at_50%_100%,rgba(255,208,106,0.08),transparent_26%)]" />
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm tracking-[0.18em] text-[var(--text-soft)] uppercase">
-                      Nexvora Launch Radar
+                <div className="flex justify-center">
+                  <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur">
+                    <div className="text-[0.72rem] uppercase tracking-[0.34em] text-[var(--text-soft)]">
+                      Nexvora Engine
                     </div>
-                    <div className="mt-1 text-lg font-semibold tracking-tight text-[var(--text)]">
-                      Client satisfaction and services
-                    </div>
-                  </div>
-                  <div className="status-badge rounded-full px-3 py-1 text-xs font-semibold">
-                    {widgetLabel}
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-                  <div className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4">
+                <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_1fr] xl:items-stretch">
+                  <div
+                    className="widget-water-shell relative flex h-full min-h-[19.5rem] flex-col overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4"
+                    style={{ "--fill": `${widgetProgress}%` } as React.CSSProperties}
+                  >
                     <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(53,227,177,0.12),transparent_42%),radial-gradient(circle_at_center,rgba(143,131,255,0.08),transparent_66%)]" />
-                    <div className="relative flex items-center justify-between gap-3">
-                      <span className="text-[0.7rem] uppercase tracking-[0.24em] text-[var(--text-soft)]">Client Satisfaction</span>
-                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent-2)]">
-                        <span className="h-2 w-2 rounded-full bg-[var(--accent-2)] shadow-[0_0_18px_color-mix(in_srgb,var(--accent-2)_70%,transparent)]" />
-                        {widgetProgress}% complete
+                    <div className="relative flex items-center justify-start gap-3">
+                      <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-2)] shadow-[0_0_12px_color-mix(in_srgb,var(--accent-2)_55%,transparent)]" />
+                        Scanning
                       </span>
                     </div>
 
-                    <div className="relative mt-4 flex aspect-square items-center justify-center">
-                      <div className="widget-radar-grid absolute inset-3 rounded-full border border-white/10" />
-                      <div className="widget-radar-grid absolute inset-9 rounded-full border border-white/10" />
-                      <div className="widget-radar-grid absolute inset-14 rounded-full border border-white/10" />
-                      <div className="widget-sweep absolute inset-0 rounded-full" />
+                    <div className="relative mt-4 flex min-h-[14.5rem] flex-1 items-center justify-center">
+                      <div className="widget-water-tank absolute inset-x-[24%] top-[7%] bottom-[8%] overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,28,0.9),rgba(9,14,28,0.7))] shadow-[inset_0_0_20px_rgba(255,255,255,0.03)]">
+                        <div
+                          className="widget-water-fill absolute inset-x-0 bottom-0"
+                          style={{ height: `${widgetProgress}%` }}
+                        >
+                          <div className="widget-water-flow absolute inset-0" />
+                          <div className="widget-water-surface absolute inset-x-0 top-0 h-8" />
+                        </div>
+                        <div className="widget-water-gloss absolute inset-0" />
+                      </div>
 
-                      <svg
-                        viewBox="0 0 220 220"
-                        className="relative h-full w-full max-w-[15.5rem]"
-                        aria-hidden="true"
-                      >
-                        <defs>
-                          <linearGradient id="widget-ring" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="var(--accent)" />
-                            <stop offset="100%" stopColor="var(--accent-2)" />
-                          </linearGradient>
-                          <linearGradient id="widget-core" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="var(--accent-2)" stopOpacity="0.3" />
-                            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0.06" />
-                          </linearGradient>
-                        </defs>
-
-                        <circle cx="110" cy="110" r="88" fill="none" stroke="rgba(154,170,214,0.09)" strokeWidth="1.25" />
-                        <circle cx="110" cy="110" r="62" fill="none" stroke="rgba(154,170,214,0.08)" strokeWidth="1" />
-
-                        <circle
-                          cx="110"
-                          cy="110"
-                          r="78"
-                          fill="none"
-                          stroke="url(#widget-ring)"
-                          strokeWidth="12"
-                          strokeLinecap="round"
-                          strokeDasharray={2 * Math.PI * 78}
-                          strokeDashoffset={(1 - widgetProgress / 100) * (2 * Math.PI * 78)}
-                          transform="rotate(-90 110 110)"
-                        />
-
-                        <circle cx="110" cy="110" r="44" fill="url(#widget-core)" opacity="0.9" />
-                        <circle cx="110" cy="110" r="30" fill="rgba(8, 13, 25, 0.9)" />
-
-                        {[
-                          { x: 110, y: 32 },
-                          { x: 164, y: 56 },
-                          { x: 184, y: 110 },
-                          { x: 164, y: 164 },
-                          { x: 110, y: 188 },
-                          { x: 56, y: 164 },
-                          { x: 36, y: 110 },
-                          { x: 56, y: 56 },
-                        ].map((node, index) => (
-                          <circle
-                            key={`${node.x}-${node.y}-${index}`}
-                            cx={node.x}
-                            cy={node.y}
-                            r={index % 2 === 0 ? 3 : 2.2}
-                            fill={index < Math.ceil((widgetProgress / 100) * 8) ? "var(--accent-2)" : "rgba(160,174,203,0.3)"}
-                          />
-                        ))}
-
-                        <circle cx="184" cy="110" r="4.5" fill="var(--accent-2)" opacity="0.95" />
-                        <line
-                          x1="110"
-                          y1="110"
-                          x2="184"
-                          y2="110"
-                          stroke="rgba(53,227,177,0.9)"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          className="widget-sweep-arm"
-                        />
-                      </svg>
-
-                      <div className="absolute flex h-28 w-28 flex-col items-center justify-center rounded-full border border-white/10 bg-[color-mix(in_srgb,var(--bg-elevated)_78%,transparent)] text-center shadow-[0_0_40px_rgba(0,0,0,0.28)] backdrop-blur">
-                        <div className="text-4xl font-semibold tracking-tight text-[var(--text)]">
+                      <div className="absolute left-1/2 top-1/2 flex h-[5.8rem] w-[5.8rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-white/10 bg-[color-mix(in_srgb,var(--bg-elevated)_82%,transparent)] text-center shadow-[0_0_22px_rgba(0,0,0,0.18)] backdrop-blur">
+                        <div className="text-[1.65rem] font-semibold tracking-tight text-[var(--text)]">
                           {widgetProgress}
                         </div>
-                        <div className="mt-1 text-[0.62rem] uppercase tracking-[0.28em] text-[var(--text-soft)]">
+                        <div className="mt-1 text-[0.5rem] uppercase tracking-[0.28em] text-[var(--text-soft)]">
                           Percent
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-[0.7rem] uppercase tracking-[0.24em] text-[var(--text-soft)]">What We Offer</div>
-                      <div className="text-sm font-semibold text-[var(--accent-2)]">
-                        {String(offerIndex + 1).padStart(2, "0")}/{offerItems.length}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 rounded-[1.6rem] border border-white/10 bg-white/[0.03] p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="max-w-[18rem]">
-                          <div className="text-[0.65rem] uppercase tracking-[0.26em] text-[var(--text-soft)]">
-                            Featured capability
-                          </div>
-                          <div className="mt-2 text-2xl font-semibold leading-8 tracking-tight text-[var(--text)]">
-                            {offerItems[offerIndex]}
-                          </div>
-                        </div>
-                        <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold tracking-[0.18em] text-[var(--text-soft)]">
-                          {String(offerIndex + 1).padStart(2, "0")}
-                        </div>
-                      </div>
-
-                      <div className="mt-4 flex items-center gap-2">
-                        {offerItems.map((_, index) => (
-                          <span
-                            key={index}
-                            className={`h-1.5 rounded-full transition-all duration-300 ${
-                              index === offerIndex ? "w-8 bg-[var(--accent-2)]" : "w-2 bg-white/20"
+                  <div className="flex h-full min-h-[19.5rem] flex-col rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4">
+                    <div className="flex flex-1 flex-col justify-start gap-2 pb-3 pt-1">
+                      {offerItems.map((item, index) => {
+                        const active = index === offerIndex;
+                        return (
+                          <div
+                            key={item}
+                            className={`flex items-center rounded-[1.05rem] border px-4 py-[0.62rem] transition-all duration-500 ${
+                              active
+                                ? "border-white/14 bg-white/[0.06] shadow-[0_10px_26px_rgba(0,0,0,0.14)]"
+                                : "border-white/8 bg-white/[0.025] opacity-65"
                             }`}
-                          />
-                        ))}
-                      </div>
+                            style={{
+                              transform: active ? "translateX(0)" : "translateX(4px)",
+                            }}
+                          >
+                            <div className="flex w-full items-center gap-3">
+                              <span className={`h-2 w-2 rounded-full ${active ? "bg-[var(--accent-2)]" : "bg-white/20"}`} />
+                              <div className="min-w-0">
+                                <div className={`truncate text-[0.9rem] font-medium tracking-tight ${active ? "text-[var(--text)]" : "text-[var(--text-soft)]"}`}>
+                                  {item}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
