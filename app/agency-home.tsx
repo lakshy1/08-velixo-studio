@@ -20,6 +20,13 @@ type Review = {
   initials: string;
 };
 
+type Service = {
+  title: string;
+  description: string;
+  points: string[];
+  technologies: string[];
+};
+
 const navItems = [
   { label: "Home", href: "#home" },
   { label: "Services", href: "#services" },
@@ -29,51 +36,105 @@ const navItems = [
   { label: "Contact", href: "#contact" },
 ];
 
-const services = [
+const services: Service[] = [
   {
     title: "Web Design",
     description:
       "Conversion-focused websites built with rhythm, clarity, and performance at the center.",
+    points: [
+      "Brand-first layouts that make the story easy to scan.",
+      "Responsive sections that stay elegant across breakpoints.",
+      "Conversion-focused structure for stronger landing performance.",
+    ],
+    technologies: ["Next.js", "Framer Motion", "Tailwind CSS", "GSAP"],
   },
   {
     title: "App Design",
     description:
       "Intuitive mobile and desktop product experiences that feel polished from the first tap.",
+    points: [
+      "Clear user flows built for fast decision-making.",
+      "Component systems that scale across product surfaces.",
+      "High-fidelity prototypes for stakeholder alignment.",
+    ],
+    technologies: ["Figma", "React Native", "MUI", "Lottie"],
   },
   {
     title: "Graphic Design",
     description:
       "Brand systems, motion assets, and visual identities that stay consistent across every touchpoint.",
+    points: [
+      "Identity systems that stay consistent in every format.",
+      "Motion-ready assets for social and presentation use.",
+      "Visual language built to feel premium and memorable.",
+    ],
+    technologies: ["Adobe Illustrator", "After Effects", "Figma", "Canva"],
   },
   {
     title: "SaaS Solutions",
     description:
       "End-to-end SaaS design and development from MVP foundations to scale-ready product systems.",
+    points: [
+      "Modular product architecture for long-term growth.",
+      "Dashboard and workflow design that reduces friction.",
+      "Launch-ready systems with room to iterate quickly.",
+    ],
+    technologies: ["Next.js", "Node.js", "PostgreSQL", "Supabase"],
   },
   {
     title: "Content Creation",
     description:
       "Short-form video editing, branded content, motion graphics, and polished production workflows built to keep your story moving.",
+    points: [
+      "Short-form edits tailored for social-first attention spans.",
+      "Branded motion treatments with consistent pacing.",
+      "Production workflows for fast, repeatable content output.",
+    ],
+    technologies: ["Premiere Pro", "After Effects", "CapCut", "DaVinci Resolve"],
   },
   {
     title: "Product Testing",
     description:
       "Manual and automated QA, performance checks, and launch validation for confidence at delivery.",
+    points: [
+      "Coverage planning for critical user journeys.",
+      "Regression checks that reduce release risk.",
+      "Performance validation before launch windows.",
+    ],
+    technologies: ["Playwright", "Cypress", "Lighthouse", "Jest"],
   },
   {
     title: "AI Integration",
     description:
       "LLM workflows, automation, and intelligent assistants that reduce friction and unlock speed.",
+    points: [
+      "Workflow automation that removes manual overhead.",
+      "Assistant-style experiences for faster user support.",
+      "Integrated AI features that fit the product context.",
+    ],
+    technologies: ["OpenAI API", "LangChain", "Vercel AI SDK", "Pinecone"],
   },
   {
     title: "SEO Optimization",
     description:
       "Technical SEO, on-page strategy, and performance tuning that grow visibility with intent.",
+    points: [
+      "Technical fixes that help search bots understand the site.",
+      "On-page structure for stronger ranking signals.",
+      "Performance tuning that supports better discoverability.",
+    ],
+    technologies: ["Google Search Console", "Ahrefs", "Screaming Frog", "Schema.org"],
   },
   {
     title: "Cloud Services",
     description:
       "Cloud deployments, DevOps pipelines, and scalable infrastructure ready for growth spikes.",
+    points: [
+      "Deployment pipelines built for repeatable releases.",
+      "Infrastructure planning that supports scaling needs.",
+      "Observability and maintenance for operational confidence.",
+    ],
+    technologies: ["AWS", "Docker", "GitHub Actions", "Vercel"],
   },
 ];
 
@@ -155,6 +216,13 @@ const team = [
     initials: "HJ",
     skills: ["MERN Stack", "Next.js", "Configurations", "Testing"],
     bio: "Delivers robust app experiences, clean integrations, and reliable front-to-back implementation.",
+  },
+  {
+    name: "Ovesh",
+    role: "Content Admin",
+    initials: "OV",
+    skills: ["Audio Video Editing", "Graphic Designing", "Content Strategy"],
+    bio: "Shapes content operations, sharpens visual output, and keeps media delivery organized across campaigns.",
   },
 ];
 
@@ -431,6 +499,7 @@ export default function AgencyHome() {
   const [selectedRating, setSelectedRating] = useState(5);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [activeTeamCard, setActiveTeamCard] = useState<string | null>(null);
+  const [activeServiceIndex, setActiveServiceIndex] = useState<number | null>(null);
   const [reviews, setReviews] = useState(initialReviews);
   const [reviewForm, setReviewForm] = useState({
     name: "",
@@ -457,6 +526,7 @@ export default function AgencyHome() {
   const count100 = useCountUp({ target: stats[3].target, suffix: stats[3].suffix, active: statsVisible, delayMs: 1200 });
   const widgetProgress = useAnimatedNumber(100, true, 1800);
   const [offerIndex, setOfferIndex] = useState(0);
+  const activeService = activeServiceIndex === null ? null : services[activeServiceIndex];
   function handleSmoothAnchor(
     event: MouseEvent<HTMLAnchorElement>,
     href: string,
@@ -527,6 +597,35 @@ export default function AgencyHome() {
     window.addEventListener("pointerdown", onPointerDown);
     return () => window.removeEventListener("pointerdown", onPointerDown);
   }, [activeTeamCard, teamPopupRef]);
+
+  useEffect(() => {
+    if (activeServiceIndex === null && !reviewModalOpen) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActiveServiceIndex(null);
+        setReviewModalOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeServiceIndex, reviewModalOpen]);
+
+  useEffect(() => {
+    if (activeServiceIndex === null && !reviewModalOpen) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [activeServiceIndex, reviewModalOpen]);
 
   async function handleAssistantSubmit() {
     setAssistantLoading(true);
@@ -740,9 +839,9 @@ export default function AgencyHome() {
                 <span>Theme</span>
                 <span className="text-[var(--text-soft)]">{theme === "dark" ? "Dark" : "Light"}</span>
               </button>
-            </div>
-          </div>
         </div>
+      </div>
+      </div>
       ) : null}
 
       <main className="relative z-10">
@@ -921,25 +1020,33 @@ export default function AgencyHome() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {services.map((service, index) => (
               <article
                 key={service.title}
-                className="group hover-lift relative overflow-hidden rounded-[1.6rem] surface-panel-strong p-5"
+                className="group relative overflow-hidden rounded-[1.4rem] surface-panel-strong p-4"
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,99,255,0.16),transparent_36%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="relative flex h-full min-h-[12.5rem] flex-col justify-between gap-4">
-                  <div className="flex items-start gap-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveServiceIndex(index)}
+                  className="relative flex h-full min-h-[8.75rem] w-full flex-col justify-between gap-3 text-left"
+                >
+                  <div className="flex items-start gap-3">
                     <ServiceIcon index={index} />
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold text-[var(--text)]">{service.title}</h3>
-                      <p className="max-w-[22rem] text-sm leading-6 text-[var(--text-soft)]">{service.description}</p>
+                    <div className="min-w-0 space-y-1">
+                      <h3 className="truncate text-lg font-semibold text-[var(--text)] sm:text-xl">
+                        {service.title}
+                      </h3>
+                      <p className="max-w-[22rem] truncate text-sm leading-6 text-[var(--text-soft)]">
+                        {service.description}
+                      </p>
                     </div>
                   </div>
                   <div className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
                     Learn More <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
-                </div>
+                </button>
               </article>
             ))}
           </div>
@@ -998,7 +1105,7 @@ export default function AgencyHome() {
                   {[...clientNames, ...clientNames].map((name, index) => (
                     <div
                       key={`${name}-logo-${index}`}
-                      className="surface-panel flex h-12 min-w-[9.5rem] items-center justify-center rounded-[1.25rem] px-4 text-sm font-semibold text-[var(--text-soft)] transition-all hover:text-[var(--text)] sm:min-w-[11.5rem] sm:px-5 sm:text-base"
+                      className="chip flex h-12 min-w-[9.5rem] items-center justify-center px-4 text-sm font-medium text-[var(--text)] sm:min-w-[11.5rem] sm:px-5 sm:text-base"
                     >
                       {name}
                     </div>
@@ -1579,6 +1686,114 @@ export default function AgencyHome() {
           ))}
         </div>
       </div>
+
+      {activeService ? (
+        <div
+          className={`fixed inset-0 z-[70] px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-6 ${theme === "light" ? "bg-black/45" : "bg-black/70"}`}
+          onClick={() => setActiveServiceIndex(null)}
+        >
+          <div
+            className={`mx-auto mt-2 max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-[2rem] border p-5 shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:mt-4 sm:p-8 ${
+              theme === "light"
+                ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.99),rgba(244,234,213,0.98))] text-[#181310]"
+                : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className={`flex items-start justify-between gap-4 border-b pb-5 ${theme === "light" ? "border-black/10" : "border-white/10"}`}>
+              <div>
+                <div
+                  className={`text-sm uppercase tracking-[0.22em] ${
+                    theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"
+                  }`}
+                >
+                  Service Deep Dive
+                </div>
+                <h3 className={`mt-2 text-2xl font-semibold sm:text-[2rem] ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
+                  {activeService.title}
+                </h3>
+                <p className={`mt-3 max-w-2xl text-sm leading-7 ${theme === "light" ? "text-[#6f5d49]" : "text-white/68"}`}>
+                  {activeService.description}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveServiceIndex(null)}
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border transition-colors ${
+                  theme === "light"
+                    ? "border-black/10 bg-black/[0.04] text-[#181310] hover:bg-black/[0.08]"
+                    : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
+                }`}
+                aria-label="Close service details"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+              <div className={`rounded-[1.5rem] border p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
+                <div className={`text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
+                  What This Covers
+                </div>
+                <ul className={`mt-4 space-y-3 text-sm leading-7 ${theme === "light" ? "text-[#2a2118]" : "text-white/82"}`}>
+                  {activeService.points.map((point) => (
+                    <li key={point} className="flex gap-3">
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--accent-2)] shadow-[0_0_14px_rgba(53,227,177,0.35)]" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className={`rounded-[1.5rem] border p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
+                <div className={`text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
+                  Suggested Tools
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {activeService.technologies.map((technology) => (
+                    <span
+                      key={technology}
+                      className={`rounded-full border px-3 py-2 text-xs font-medium ${
+                        theme === "light"
+                          ? "border-black/10 bg-white/70 text-[#181310]"
+                          : "border-white/10 bg-white/[0.05] text-[var(--text)]"
+                      }`}
+                    >
+                      {technology}
+                    </span>
+                  ))}
+                </div>
+
+                <div className={`mt-6 text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
+                  Delivery Flow
+                </div>
+                <div className="mt-4 space-y-3">
+                  {[
+                    { phase: "Discover", detail: "Clarify the brief, scope, and outcome." },
+                    { phase: "Build", detail: "Shape the work with clean structure and polish." },
+                    { phase: "Launch", detail: "Deliver the final output ready for use." },
+                  ].map((step, stepIndex) => (
+                    <div
+                      key={step.phase}
+                      className={`flex items-start gap-3 rounded-2xl border p-3 ${
+                        theme === "light" ? "border-black/10 bg-white/70" : "border-white/8 bg-white/[0.03]"
+                      }`}
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-xs font-semibold text-white">
+                        {String(stepIndex + 1).padStart(2, "0")}
+                      </div>
+                      <div>
+                        <div className={`text-sm font-medium ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>{step.phase}</div>
+                        <div className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#6f5d49]" : "text-white/55"}`}>{step.detail}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {reviewModalOpen ? (
         <div className="fixed inset-0 z-[70] bg-black/70 px-4 py-8 backdrop-blur-sm">

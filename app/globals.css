@@ -784,21 +784,3 @@ select {
     transition: none !important;
   }
 }
-
-@media (max-width: 767px) {
-  .project-marquee {
-    overflow-x: auto;
-    mask-image: none;
-    -webkit-mask-image: none;
-    scrollbar-width: none;
-  }
-
-  .project-marquee::-webkit-scrollbar {
-    display: none;
-  }
-
-  .project-marquee .marquee-track {
-    animation: none;
-    padding-bottom: 0.25rem;
-  }
-}
