@@ -1690,11 +1690,11 @@ export default function AgencyHome() {
 
       {activeService ? (
         <div
-          className={`fixed inset-0 z-[70] px-3 py-3 backdrop-blur-sm sm:px-6 sm:py-6 ${theme === "light" ? "bg-black/45" : "bg-black/70"}`}
+          className={`fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto px-3 py-3 backdrop-blur-sm sm:px-6 sm:py-6 ${theme === "light" ? "bg-black/45" : "bg-black/70"}`}
           onClick={() => setActiveServiceIndex(null)}
         >
           <div
-            className={`mx-auto mt-1 max-h-[calc(100vh-1.5rem)] w-full max-w-[68rem] overflow-y-auto rounded-[2rem] border p-4 shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:mt-2 sm:p-6 lg:min-h-[32rem] ${
+            className={`my-auto w-full max-w-[68rem] max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-[2rem] border p-4 shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:p-6 lg:min-h-[32rem] ${
               theme === "light"
                 ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.99),rgba(244,234,213,0.98))] text-[#181310]"
                 : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
