@@ -33,6 +33,72 @@ type AssistantMessage = {
   content: string;
 };
 
+function ExternalLinkIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M9 7h8v8"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17 7 7 17"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 7H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LinkedinIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path
+        d="M6.75 9.25V18"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6.75 6.75v.05"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.5 9.25V18"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14.25 18v-4.2c0-1.95 1.14-3.3 2.85-3.3 1.66 0 2.4 1.05 2.4 2.8V18"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14.25 12.15V18"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 const navItems = [
   { label: "Home", href: "#home" },
   { label: "Services", href: "#services" },
@@ -230,6 +296,8 @@ const team = [
     initials: "LS",
     skills: ["Web/Android Development", "AI-ML Integration", "DevOps"],
     bio: "Builds product systems, AI features, and deployment pipelines with a strong end-to-end delivery mindset.",
+    portfolioUrl: "https://lakshyaps.netlify.app/",
+    linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
   },
   {
     name: "Honey Jain",
@@ -237,6 +305,8 @@ const team = [
     initials: "HJ",
     skills: ["MERN Stack", "Next.js", "Configurations", "Testing"],
     bio: "Delivers robust app experiences, clean integrations, and reliable front-to-back implementation.",
+    portfolioUrl: "https://lakshyaps.netlify.app/",
+    linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
   },
   {
     name: "Ovesh",
@@ -244,6 +314,8 @@ const team = [
     initials: "OV",
     skills: ["Audio Video Editing", "Graphic Designing", "Content Strategy"],
     bio: "Shapes content operations, sharpens visual output, and keeps media delivery organized across campaigns.",
+    portfolioUrl: "https://lakshyaps.netlify.app/",
+    linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
   },
 ];
 
@@ -1044,19 +1116,42 @@ export default function AgencyHome() {
 
                 <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_1fr] xl:items-stretch">
                   <div
-                    className="widget-water-shell relative hidden h-full min-h-[19.5rem] flex-col overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-4 xl:flex"
+                    className={`widget-water-shell relative hidden h-full min-h-[19.5rem] flex-col overflow-hidden rounded-[1.8rem] border p-4 xl:flex ${
+                      theme === "light"
+                        ? "border-[rgba(170,136,66,0.10)] bg-[linear-gradient(180deg,rgba(253,248,236,0.99),rgba(246,232,205,0.94))]"
+                        : "border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))]"
+                    }`}
                     style={{ "--fill": `${widgetProgress}%` } as React.CSSProperties}
                   >
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(53,227,177,0.12),transparent_42%),radial-gradient(circle_at_center,rgba(143,131,255,0.08),transparent_66%)]" />
+                    <div
+                      className={`pointer-events-none absolute inset-0 ${
+                        theme === "light"
+                          ? "bg-[radial-gradient(circle_at_50%_8%,rgba(235,199,101,0.26),transparent_24%),radial-gradient(circle_at_center,rgba(143,131,255,0.06),transparent_66%)]"
+                          : "bg-[radial-gradient(circle_at_center,rgba(53,227,177,0.12),transparent_42%),radial-gradient(circle_at_center,rgba(143,131,255,0.08),transparent_66%)]"
+                      }`}
+                    />
+                    <div
+                      className={`pointer-events-none absolute inset-x-0 top-0 h-28 ${
+                        theme === "light"
+                          ? "bg-[linear-gradient(180deg,rgba(236,201,103,0.30),rgba(252,245,230,0.16) 42%,transparent 100%)]"
+                          : "bg-[linear-gradient(180deg,rgba(53,227,177,0.08),rgba(0,0,0,0))]"
+                      }`}
+                    />
                     <div className="relative hidden items-center justify-start gap-3 lg:flex">
-                      <span className="inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
-                        <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-2)] shadow-[0_0_12px_color-mix(in_srgb,var(--accent-2)_55%,transparent)]" />
+                      <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium ${theme === "light" ? "border-[rgba(170,136,66,0.14)] bg-[rgba(252,245,232,0.72)] text-[#b6841c]" : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[var(--accent-2)]"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${theme === "light" ? "bg-[#d8b35b] shadow-[0_0_12px_rgba(216,179,91,0.55)]" : "bg-[var(--accent-2)] shadow-[0_0_12px_color-mix(in_srgb,var(--accent-2)_55%,transparent)]"}`} />
                         Scanning
                       </span>
                     </div>
 
                     <div className="relative mt-4 flex min-h-[14.5rem] flex-1 items-center justify-center">
-                      <div className="widget-water-tank absolute inset-x-[29%] top-[8%] bottom-[8%] overflow-hidden rounded-full border border-white/18 bg-[linear-gradient(180deg,rgba(9,14,28,0.96),rgba(9,14,28,0.7))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_18px_34px_rgba(0,0,0,0.16)]">
+                      <div
+                        className={`widget-water-tank absolute inset-x-[29%] top-[8%] bottom-[8%] overflow-hidden rounded-full border ${
+                          theme === "light"
+                            ? "border-[rgba(118,93,34,0.28)] bg-[linear-gradient(180deg,rgba(103,88,62,0.52),rgba(59,51,44,0.30))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02),0_18px_34px_rgba(0,0,0,0.10)]"
+                            : "border-white/18 bg-[linear-gradient(180deg,rgba(9,14,28,0.96),rgba(9,14,28,0.7))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_18px_34px_rgba(0,0,0,0.16)]"
+                        }`}
+                      >
                         <div
                           className="widget-water-fill absolute inset-x-0 bottom-0"
                           style={{ height: `${widgetProgress}%` }}
@@ -1358,7 +1453,9 @@ export default function AgencyHome() {
 
                       <div className="mt-auto flex items-center justify-start gap-3 pt-4">
                         <a
-                          href="#contact"
+                          href="https://lakshyaps.netlify.app/"
+                          target="_blank"
+                          rel="noreferrer"
                           className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-4 py-2.5 text-sm font-semibold text-white"
                         >
                           View Portfolio →
@@ -1383,8 +1480,27 @@ export default function AgencyHome() {
                         </button>
                       </div>
                       <p className="mt-4 text-sm leading-7 text-[var(--text)]">{member.bio}</p>
-                      <div className="mt-auto rounded-2xl surface-panel p-3 text-xs leading-6 text-[var(--text-soft)]">
-                        This space can link to LinkedIn, external portfolio pages, or personal case study reels.
+                      <div className="mt-auto flex items-center gap-3 pt-4">
+                        <a
+                          href={member.portfolioUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(108,99,255,0.16),rgba(0,212,170,0.12))] px-4 text-sm font-medium text-[var(--text)] transition-transform hover:-translate-y-0.5"
+                          aria-label={`${member.name} portfolio`}
+                        >
+                          <ExternalLinkIcon className="h-4 w-4" />
+                          Portfolio
+                        </a>
+                        <a
+                          href={member.linkedinUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(53,227,177,0.16),rgba(143,131,255,0.12))] px-4 text-sm font-medium text-[var(--text)] transition-transform hover:-translate-y-0.5"
+                          aria-label={`${member.name} LinkedIn`}
+                        >
+                          <LinkedinIcon className="h-4 w-4" />
+                          LinkedIn
+                        </a>
                       </div>
                     </div>
                   </div>
