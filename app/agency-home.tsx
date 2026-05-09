@@ -392,8 +392,11 @@ function scrollToSection(href: string) {
     return;
   }
 
+  const viewport = document.querySelector(".scroll-shell__viewport");
+  const scrollContainer = viewport instanceof HTMLElement ? viewport : null;
+
   if (href === "#home") {
-    window.scrollTo({
+    (scrollContainer ?? window).scrollTo({
       top: 0,
       behavior: "smooth",
     });
@@ -403,9 +406,12 @@ function scrollToSection(href: string) {
   const header = document.querySelector("header");
   const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
   const overshoot = window.innerWidth < 768 ? 56 : 40;
-  const targetY = window.scrollY + target.getBoundingClientRect().top - headerOffset + overshoot;
+  const containerTop = scrollContainer?.getBoundingClientRect().top ?? 0;
+  const currentScrollTop = scrollContainer?.scrollTop ?? window.scrollY;
+  const targetY =
+    currentScrollTop + target.getBoundingClientRect().top - containerTop - headerOffset + overshoot;
 
-  window.scrollTo({
+  (scrollContainer ?? window).scrollTo({
     top: Math.max(targetY, 0),
     behavior: "smooth",
   });
@@ -646,13 +652,19 @@ export default function AgencyHome() {
   }, [theme]);
 
   useEffect(() => {
+    const viewport = document.querySelector(".scroll-shell__viewport");
+
+    if (!(viewport instanceof HTMLElement)) {
+      return;
+    }
+
     const onScroll = () => {
-      setHeaderSolid(window.scrollY > 16);
+      setHeaderSolid(viewport.scrollTop > 16);
     };
 
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    viewport.addEventListener("scroll", onScroll, { passive: true });
+    return () => viewport.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -683,6 +695,11 @@ export default function AgencyHome() {
       return;
     }
 
+    const viewport = document.querySelector(".scroll-shell__viewport");
+    if (!(viewport instanceof HTMLElement)) {
+      return;
+    }
+
     let frame = 0;
 
     const updateActiveSection = () => {
@@ -695,7 +712,7 @@ export default function AgencyHome() {
         const header = document.querySelector("header");
         const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
         const dockOffset = window.innerWidth < 768 ? 96 : 0;
-        const probeLine = window.scrollY + headerOffset + dockOffset + (window.innerWidth < 768 ? 18 : 12);
+        const probeLine = viewport.scrollTop + headerOffset + dockOffset + (window.innerWidth < 768 ? 18 : 12);
         let nextSection: DockSection = "home";
 
         for (const id of dockSectionOrder) {
@@ -704,7 +721,7 @@ export default function AgencyHome() {
             continue;
           }
 
-          const top = element.getBoundingClientRect().top + window.scrollY;
+          const top = element.getBoundingClientRect().top + viewport.scrollTop - viewport.getBoundingClientRect().top;
 
           if (probeLine >= top) {
             nextSection = id;
@@ -716,7 +733,7 @@ export default function AgencyHome() {
     };
 
     updateActiveSection();
-    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    viewport.addEventListener("scroll", updateActiveSection, { passive: true });
     window.addEventListener("resize", updateActiveSection);
 
     return () => {
@@ -724,7 +741,7 @@ export default function AgencyHome() {
       if (dockScrollLockRef.current !== null) {
         window.clearTimeout(dockScrollLockRef.current);
       }
-      window.removeEventListener("scroll", updateActiveSection);
+      viewport.removeEventListener("scroll", updateActiveSection);
       window.removeEventListener("resize", updateActiveSection);
     };
   }, []);
@@ -948,9 +965,17 @@ export default function AgencyHome() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] mesh opacity-85" />
 
       <header
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${
-          headerSolid ? "surface-panel-strong" : "bg-transparent border-transparent"
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300 ${
+          headerSolid ? "border-[var(--line)]" : "bg-transparent border-transparent"
         }`}
+        style={
+          headerSolid
+            ? {
+                backgroundColor: "var(--bg-elevated)",
+                boxShadow: "0 18px 40px rgba(0, 0, 0, 0.12)",
+              }
+            : undefined
+        }
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <a

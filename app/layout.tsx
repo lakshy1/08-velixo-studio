@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ScrollShell from "./scroll-shell";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nexvora.com"),
@@ -32,7 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full overflow-hidden flex flex-col">
+        <ScrollShell>{children}</ScrollShell>
+      </body>
     </html>
   );
 }
