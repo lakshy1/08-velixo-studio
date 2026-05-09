@@ -59,6 +59,12 @@ html {
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 8rem;
+  }
+}
+
 html::-webkit-scrollbar {
   width: 11px;
   height: 11px;

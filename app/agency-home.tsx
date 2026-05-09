@@ -185,7 +185,8 @@ const mobileDockItems = [
   { label: "Contact", href: "#contact", icon: "contact" as const },
 ];
 
-const sectionOrder = ["home", "services", "work", "team", "reviews", "contact"] as const;
+const dockSectionOrder = ["home", "services", "work", "contact"] as const;
+type DockSection = (typeof dockSectionOrder)[number];
 
 const stats = [
   { target: 50, suffix: "+", label: "Projects" },
@@ -321,33 +322,13 @@ function scrollToSection(href: string) {
 
   const header = document.querySelector("header");
   const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
-  const targetY =
-    window.scrollY + target.getBoundingClientRect().top - headerOffset - 12;
-  const startY = window.scrollY;
-  const distance = targetY - startY;
-  const duration = 900;
-  let start: number | null = null;
+  const overshoot = window.innerWidth < 768 ? 84 : 64;
+  const targetY = window.scrollY + target.getBoundingClientRect().top - headerOffset + overshoot;
 
-  const easeInOutCubic = (value: number) =>
-    value < 0.5
-      ? 4 * value * value * value
-      : 1 - Math.pow(-2 * value + 2, 3) / 2;
-
-  const step = (time: number) => {
-    if (start === null) {
-      start = time;
-    }
-
-    const progress = Math.min((time - start) / duration, 1);
-    const eased = easeInOutCubic(progress);
-    window.scrollTo(0, startY + distance * eased);
-
-    if (progress < 1) {
-      window.requestAnimationFrame(step);
-    }
-  };
-
-  window.requestAnimationFrame(step);
+  window.scrollTo({
+    top: Math.max(targetY, 0),
+    behavior: "smooth",
+  });
 }
 
 function useCountUp({ target, suffix = "", active, delayMs = 0 }: CounterProps) {
@@ -537,7 +518,8 @@ export default function AgencyHome() {
   const [contactNotice, setContactNotice] = useState("");
   const [contactBusy, setContactBusy] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
-  const [activeSection, setActiveSection] = useState<(typeof sectionOrder)[number]>("home");
+  const [activeSection, setActiveSection] = useState<DockSection>("home");
+  const dockScrollLockRef = useRef<number | null>(null);
 
   const [statsRef, statsVisible] = useInViewOnce<HTMLDivElement>();
   const [workRef, workVisible] = useInViewOnce<HTMLDivElement>();
@@ -566,9 +548,16 @@ export default function AgencyHome() {
     }
 
     event.preventDefault();
+    if (dockScrollLockRef.current !== null) {
+      window.clearTimeout(dockScrollLockRef.current);
+    }
     scrollToSection(href);
     setMobileOpen(false);
-    setActiveSection(href.slice(1) as (typeof sectionOrder)[number]);
+    const nextSection = href.slice(1) as DockSection;
+    setActiveSection(nextSection);
+    dockScrollLockRef.current = window.setTimeout(() => {
+      dockScrollLockRef.current = null;
+    }, 900);
   }
 
   useEffect(() => {
@@ -617,24 +606,27 @@ export default function AgencyHome() {
     let frame = 0;
 
     const updateActiveSection = () => {
+      if (dockScrollLockRef.current !== null) {
+        return;
+      }
+
       cancelAnimationFrame(frame);
       frame = window.requestAnimationFrame(() => {
-        const viewportCenter = window.scrollY + window.innerHeight * 0.5;
-        let nextSection: (typeof sectionOrder)[number] = "home";
-        let smallestDistance = Number.POSITIVE_INFINITY;
+        const header = document.querySelector("header");
+        const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
+        const dockOffset = window.innerWidth < 768 ? 96 : 0;
+        const probeLine = window.scrollY + headerOffset + dockOffset + (window.innerWidth < 768 ? 18 : 12);
+        let nextSection: DockSection = "home";
 
-        for (const id of sectionOrder) {
+        for (const id of dockSectionOrder) {
           const element = document.getElementById(id);
           if (!element) {
             continue;
           }
 
-          const top = element.offsetTop;
-          const middle = top + element.offsetHeight / 2;
-          const distance = Math.abs(middle - viewportCenter);
+          const top = element.getBoundingClientRect().top + window.scrollY;
 
-          if (distance < smallestDistance) {
-            smallestDistance = distance;
+          if (probeLine >= top) {
             nextSection = id;
           }
         }
@@ -649,6 +641,9 @@ export default function AgencyHome() {
 
     return () => {
       cancelAnimationFrame(frame);
+      if (dockScrollLockRef.current !== null) {
+        window.clearTimeout(dockScrollLockRef.current);
+      }
       window.removeEventListener("scroll", updateActiveSection);
       window.removeEventListener("resize", updateActiveSection);
     };
@@ -868,7 +863,7 @@ export default function AgencyHome() {
   }
 
   return (
-    <div id="home" className="agency-shell relative min-h-screen overflow-hidden">
+    <div className="agency-shell relative min-h-screen overflow-hidden">
       <div className="pointer-events-none absolute inset-0 grid-overlay opacity-70" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] mesh opacity-85" />
 
@@ -983,7 +978,10 @@ export default function AgencyHome() {
       ) : null}
 
       <main className="relative pb-24 md:pb-0">
-        <section className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-7xl items-center px-4 py-4 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0">
+        <section
+          id="home"
+          className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-7xl items-center px-4 py-4 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0"
+        >
           <div className="grid gap-6 text-center lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10 lg:text-left">
             <div className="mx-auto space-y-5 lg:mx-0 lg:space-y-8">
               <div className="inline-flex items-center gap-3 rounded-full chip px-4 py-2 text-sm text-[var(--text-soft)] backdrop-blur">
@@ -1131,7 +1129,7 @@ export default function AgencyHome() {
           </div>
         </section>
 
-        <section id="services" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <section id="services" className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
@@ -1181,7 +1179,7 @@ export default function AgencyHome() {
         <section
           id="work"
           ref={workRef}
-          className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -1197,8 +1195,8 @@ export default function AgencyHome() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <div className="surface-panel-strong ml-auto w-[calc(100%-1rem)] rounded-[2rem] p-6 sm:w-[calc(100%-1.5rem)] md:w-[calc(100%-2rem)] lg:w-[calc(100%-3rem)] xl:w-[min(100%,72rem)] xl:max-w-none xl:rounded-l-[2rem] xl:rounded-r-none">
+          <div className="relative left-1/2 w-screen -translate-x-1/2 flex flex-col gap-6">
+            <div className="surface-panel-strong ml-auto w-full rounded-[2rem] rounded-r-none p-6">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Project names</div>
@@ -1219,7 +1217,7 @@ export default function AgencyHome() {
               </div>
             </div>
 
-            <div className="surface-panel-strong mr-auto w-[calc(100%-1rem)] rounded-[2rem] p-6 sm:w-[calc(100%-1.5rem)] md:w-[calc(100%-2rem)] lg:w-[calc(100%-3rem)] xl:w-[min(100%,72rem)] xl:max-w-none xl:rounded-l-none xl:rounded-r-[2rem]">
+            <div className="surface-panel-strong mr-auto w-full rounded-[2rem] rounded-l-none p-6">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Client logos</div>
@@ -1250,7 +1248,7 @@ export default function AgencyHome() {
 
         <section
           id="process"
-          className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -1288,7 +1286,7 @@ export default function AgencyHome() {
 
         <section
           id="team"
-          className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -1382,7 +1380,7 @@ export default function AgencyHome() {
           </div>
         </section>
 
-        <section id="reviews" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <section id="reviews" className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
@@ -1706,7 +1704,7 @@ export default function AgencyHome() {
 
         <section
           id="contact"
-          className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8"
+          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
