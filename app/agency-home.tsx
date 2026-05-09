@@ -1195,8 +1195,8 @@ export default function AgencyHome() {
             </p>
           </div>
 
-          <div className="relative left-1/2 w-screen -translate-x-1/2 flex flex-col gap-6">
-            <div className="surface-panel-strong ml-auto w-full rounded-[2rem] rounded-r-none p-6">
+          <div className="relative left-1/2 flex w-screen -translate-x-1/2 flex-col gap-6">
+            <div className="surface-panel-strong ml-auto w-[calc(100%-1rem)] rounded-[2rem] rounded-r-none p-6 sm:w-[calc(100%-1.5rem)] lg:w-[calc(100%-2rem)]">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Project names</div>
@@ -1204,7 +1204,7 @@ export default function AgencyHome() {
                 </div>
               </div>
               <div className="marquee project-marquee">
-                <div className="marquee-track reverse">
+                <div className="marquee-track reverse pl-6 sm:pl-8 lg:pl-10">
                   {projectPills.map((name, index) => (
                     <div
                       key={`${name}-pill-${index}`}
@@ -1217,7 +1217,7 @@ export default function AgencyHome() {
               </div>
             </div>
 
-            <div className="surface-panel-strong mr-auto w-full rounded-[2rem] rounded-l-none p-6">
+            <div className="surface-panel-strong mr-auto w-[calc(100%-1rem)] rounded-[2rem] rounded-l-none p-6 sm:w-[calc(100%-1.5rem)] lg:w-[calc(100%-2rem)]">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Client logos</div>
@@ -1225,7 +1225,7 @@ export default function AgencyHome() {
                 </div>
               </div>
               <div className="marquee project-marquee">
-                <div className="marquee-track">
+                <div className="marquee-track pr-6 sm:pr-8 lg:pr-10">
                   {[...clientNames, ...clientNames].map((name, index) => (
                     <div
                       key={`${name}-logo-${index}`}
