@@ -868,7 +868,7 @@ export default function AgencyHome() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] mesh opacity-85" />
 
       <header
-        className={`sticky top-0 z-50 border-b transition-colors duration-300 ${
+        className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${
           headerSolid ? "surface-panel-strong" : "bg-transparent border-transparent"
         }`}
       >
@@ -977,7 +977,7 @@ export default function AgencyHome() {
       </div>
       ) : null}
 
-      <main className="relative pb-24 md:pb-0">
+      <main className="relative pb-24 pt-[5rem] md:pb-0 md:pt-[5.25rem]">
         <section
           id="home"
           className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-7xl items-center px-4 py-4 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0"
