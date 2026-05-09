@@ -320,9 +320,17 @@ function scrollToSection(href: string) {
     return;
   }
 
+  if (href === "#home") {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+    return;
+  }
+
   const header = document.querySelector("header");
   const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
-  const overshoot = window.innerWidth < 768 ? 84 : 64;
+  const overshoot = window.innerWidth < 768 ? 56 : 40;
   const targetY = window.scrollY + target.getBoundingClientRect().top - headerOffset + overshoot;
 
   window.scrollTo({
@@ -935,8 +943,14 @@ export default function AgencyHome() {
       </header>
 
       {mobileOpen ? (
-        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm lg:hidden">
-          <div className="absolute right-0 top-0 h-full w-[84vw] max-w-sm surface-panel-strong p-6">
+        <div
+          className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        >
+          <div
+            className="absolute right-0 top-0 h-full w-[84vw] max-w-sm surface-panel-strong p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="mb-10 flex items-center justify-between">
               <div className="text-sm font-semibold tracking-[0.2em] text-[var(--text-soft)] uppercase">
                 Menu
@@ -1682,7 +1696,7 @@ export default function AgencyHome() {
               event.stopPropagation();
               setAssistantDockOpen(true);
             }}
-            className={`assistant-fab z-[90] inline-flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-xl transition-transform bottom-[6.5rem] sm:bottom-4 ${
+            className={`assistant-fab z-[90] inline-flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-xl transition-transform bottom-[5.75rem] sm:bottom-3 ${
               theme === "light"
                 ? "border-[rgba(170,136,66,0.16)] bg-[linear-gradient(135deg,rgba(252,246,233,0.96),rgba(244,234,213,0.9))] text-[#181310]"
                 : "border-white/10 bg-[linear-gradient(135deg,rgba(12,18,34,0.96),rgba(8,13,25,0.88))] text-[var(--text)]"
