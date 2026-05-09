@@ -1282,48 +1282,26 @@ export default function AgencyHome() {
             {services.map((service, index) => (
               <article
                 key={service.title}
-                className="group relative h-full overflow-hidden rounded-[1.4rem] surface-panel-strong p-4"
+                className="group relative overflow-hidden rounded-[1.25rem] surface-panel-strong p-3.5 sm:p-4"
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,99,255,0.16),transparent_36%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <button
                   type="button"
                   onClick={() => setActiveServiceIndex(index)}
-                  className="relative flex h-full min-h-[15rem] w-full flex-col gap-4 text-left sm:min-h-[16rem]"
+                  className="relative flex w-full flex-col gap-2.5 text-left"
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2.5">
                     <ServiceIcon index={index} />
-                    <div className="min-w-0 space-y-1">
-                      <h3 className="text-lg font-semibold text-[var(--text)] sm:text-xl">
+                    <div className="min-w-0 space-y-0.5">
+                      <h3 className="text-[1.02rem] font-semibold text-[var(--text)] sm:text-[1.1rem]">
                         {service.title}
                       </h3>
-                      <p className="max-w-[22rem] text-sm leading-6 text-[var(--text-soft)]">
+                      <p className="max-w-[22rem] text-[0.82rem] leading-5 text-[var(--text-soft)] sm:text-sm">
                         {service.description}
                       </p>
                     </div>
                   </div>
-                  <div className="grid gap-3">
-                    <div className="space-y-2 rounded-[1.1rem] border border-white/8 bg-white/[0.025] px-4 py-3">
-                      {service.points.map((point) => (
-                        <div key={point} className="flex items-start gap-2 text-sm leading-6 text-[var(--text-soft)]">
-                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-2)]" />
-                          <span>{point}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {service.technologies.map((technology) => (
-                        <span
-                          key={technology}
-                          className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs font-medium text-[var(--text-soft)]"
-                        >
-                          {technology}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
+                  <div className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-[var(--accent-2)] sm:text-sm">
                     Learn More <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>
                 </button>
