@@ -1091,11 +1091,11 @@ export default function AgencyHome() {
       <main className="relative pb-24 pt-[5rem] md:pb-0 md:pt-[5.25rem]">
         <section
           id="home"
-          className="mx-auto flex min-h-[calc(100svh-5rem)] max-w-7xl items-center px-4 py-4 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0"
+          className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-7xl items-center justify-center px-4 py-0 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0"
         >
-          <div className="grid gap-6 text-center lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10 lg:text-left">
-            <div className="mx-auto space-y-5 lg:mx-0 lg:space-y-8">
-              <div className="inline-flex items-center gap-3 rounded-full chip px-4 py-2 text-sm text-[var(--text-soft)] backdrop-blur">
+          <div className="grid w-full justify-items-center gap-6 text-center lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:justify-items-stretch lg:gap-10 lg:text-left">
+            <div className="mx-auto flex w-full max-w-[22rem] flex-col items-center space-y-5 sm:max-w-3xl lg:mx-0 lg:max-w-none lg:items-start lg:space-y-8">
+              <div className="inline-flex w-fit items-center gap-3 rounded-full chip px-4 py-2 text-sm text-[var(--text-soft)] backdrop-blur">
                 <span className="dot" />
                 Premium digital agency for design, development, AI, and cloud
               </div>
@@ -1109,7 +1109,7 @@ export default function AgencyHome() {
                 </p>
               </div>
 
-              <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <div className="flex w-fit flex-col items-center gap-3 sm:w-auto sm:flex-row sm:justify-center lg:justify-start">
                 <a
                   href="#contact"
                   onClick={(event) => handleSmoothAnchor(event, "#contact")}
@@ -1127,7 +1127,7 @@ export default function AgencyHome() {
               </div>
             </div>
 
-            <div className="relative mt-1 sm:mt-4 lg:mt-0">
+            <div className="relative mt-1 w-full max-w-[22rem] sm:mt-4 sm:max-w-3xl lg:mt-0 lg:max-w-none">
               <div className="absolute inset-0 -z-10 rounded-[2rem] bg-[radial-gradient(circle_at_top_left,rgba(108,99,255,0.24),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(0,212,170,0.18),transparent_45%)] blur-3xl" />
               <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-4 sm:p-6 xl:h-auto xl:min-h-0">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(108,99,255,0.18),transparent_24%),radial-gradient(circle_at_82%_16%,rgba(53,227,177,0.1),transparent_22%),radial-gradient(circle_at_50%_100%,rgba(255,208,106,0.08),transparent_26%)]" />
@@ -1282,25 +1282,47 @@ export default function AgencyHome() {
             {services.map((service, index) => (
               <article
                 key={service.title}
-                className="group relative overflow-hidden rounded-[1.4rem] surface-panel-strong p-4"
+                className="group relative h-full overflow-hidden rounded-[1.4rem] surface-panel-strong p-4"
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,99,255,0.16),transparent_36%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <button
                   type="button"
                   onClick={() => setActiveServiceIndex(index)}
-                  className="relative flex h-full min-h-[8.75rem] w-full flex-col justify-between gap-3 text-left"
+                  className="relative flex h-full min-h-[15rem] w-full flex-col gap-4 text-left sm:min-h-[16rem]"
                 >
                   <div className="flex items-start gap-3">
                     <ServiceIcon index={index} />
                     <div className="min-w-0 space-y-1">
-                      <h3 className="truncate text-lg font-semibold text-[var(--text)] sm:text-xl">
+                      <h3 className="text-lg font-semibold text-[var(--text)] sm:text-xl">
                         {service.title}
                       </h3>
-                      <p className="max-w-[22rem] truncate text-sm leading-6 text-[var(--text-soft)]">
+                      <p className="max-w-[22rem] text-sm leading-6 text-[var(--text-soft)]">
                         {service.description}
                       </p>
                     </div>
                   </div>
+                  <div className="grid gap-3">
+                    <div className="space-y-2 rounded-[1.1rem] border border-white/8 bg-white/[0.025] px-4 py-3">
+                      {service.points.map((point) => (
+                        <div key={point} className="flex items-start gap-2 text-sm leading-6 text-[var(--text-soft)]">
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--accent-2)]" />
+                          <span>{point}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {service.technologies.map((technology) => (
+                        <span
+                          key={technology}
+                          className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs font-medium text-[var(--text-soft)]"
+                        >
+                          {technology}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="mt-auto inline-flex items-center gap-2 text-sm font-medium text-[var(--accent-2)]">
                     Learn More <span className="transition-transform group-hover:translate-x-1">→</span>
                   </div>

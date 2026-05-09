@@ -1,16 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useRef } from "react";
 
-const THUMB_MIN_HEIGHT = 44;
-const SHELL_INSET = 8;
 const AUTO_HIDE_DELAY = 900;
-
-type ScrollState = {
-  visible: boolean;
-  thumbHeight: number;
-  thumbOffset: number;
-};
 
 export default function ScrollShell({
   children,
@@ -18,60 +11,74 @@ export default function ScrollShell({
   children: React.ReactNode;
 }>) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const [scrollState, setScrollState] = useState<ScrollState>({
-    visible: false,
-    thumbHeight: THUMB_MIN_HEIGHT,
-    thumbOffset: 0,
-  });
+  const railRef = useRef<HTMLDivElement>(null);
+  const thumbRef = useRef<HTMLDivElement>(null);
+  const hideTimerRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const viewport = viewportRef.current;
+    const rail = railRef.current;
+    const thumb = thumbRef.current;
 
-    if (!viewport) {
+    if (!viewport || !rail || !thumb) {
       return;
     }
 
-    let animationFrame = 0;
+    const showScrollbar = () => {
+      rail.dataset.visible = "true";
+      if (hideTimerRef.current !== null) {
+        window.clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+      hideTimerRef.current = window.setTimeout(() => {
+        rail.dataset.visible = "false";
+      }, AUTO_HIDE_DELAY);
+    };
+
+    const hideScrollbar = () => {
+      rail.dataset.visible = "false";
+    };
 
     const syncScrollbar = () => {
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
       const { scrollTop, scrollHeight, clientHeight } = viewport;
       const overflow = scrollHeight > clientHeight + 1;
+      const minProgress = 0.06;
+      const maxProgress = 1;
+      rail.dataset.orientation = isMobile ? "mobile" : "desktop";
 
       if (!overflow) {
-        setScrollState({
-          visible: false,
-          thumbHeight: THUMB_MIN_HEIGHT,
-          thumbOffset: 0,
-        });
+        thumb.style.setProperty("--scroll-progress", "0");
+        hideScrollbar();
         return;
       }
 
-      const trackHeight = Math.max(clientHeight - SHELL_INSET * 2, THUMB_MIN_HEIGHT);
-      const thumbHeight = Math.max(
-        THUMB_MIN_HEIGHT,
-        (clientHeight / scrollHeight) * trackHeight,
-      );
-      const maxThumbOffset = Math.max(trackHeight - thumbHeight, 0);
       const maxScrollTop = Math.max(scrollHeight - clientHeight, 1);
-      const thumbOffset = (scrollTop / maxScrollTop) * maxThumbOffset;
+      const progress = Math.min(
+        maxProgress,
+        Math.max(minProgress, scrollTop / maxScrollTop),
+      );
 
-      setScrollState({
-        visible: true,
-        thumbHeight,
-        thumbOffset,
-      });
+      thumb.style.setProperty("--scroll-progress", progress.toString());
+      showScrollbar();
     };
 
     const requestSync = () => {
-      window.cancelAnimationFrame(animationFrame);
-      animationFrame = window.requestAnimationFrame(syncScrollbar);
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+      animationFrameRef.current = window.requestAnimationFrame(syncScrollbar);
     };
 
-    const resizeObserver = new ResizeObserver(requestSync);
+    const resizeObserver = new ResizeObserver(() => {
+      requestSync();
+    });
 
     resizeObserver.observe(viewport);
-    if (viewport.firstElementChild) {
-      resizeObserver.observe(viewport.firstElementChild);
+    const content = viewport.firstElementChild;
+    if (content) {
+      resizeObserver.observe(content);
     }
 
     viewport.addEventListener("scroll", requestSync, { passive: true });
@@ -80,29 +87,17 @@ export default function ScrollShell({
     requestSync();
 
     return () => {
-      window.cancelAnimationFrame(animationFrame);
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (hideTimerRef.current !== null) {
+        window.clearTimeout(hideTimerRef.current);
+      }
       resizeObserver.disconnect();
       viewport.removeEventListener("scroll", requestSync);
       window.removeEventListener("resize", requestSync);
     };
   }, []);
-
-  useEffect(() => {
-    if (!scrollState.visible) {
-      return undefined;
-    }
-
-    const hideTimer = window.setTimeout(() => {
-      setScrollState((current) => ({
-        ...current,
-        visible: false,
-      }));
-    }, AUTO_HIDE_DELAY);
-
-    return () => {
-      window.clearTimeout(hideTimer);
-    };
-  }, [scrollState.visible]);
 
   return (
     <div className="scroll-shell">
@@ -110,38 +105,42 @@ export default function ScrollShell({
         ref={viewportRef}
         className="scroll-shell__viewport"
         onPointerEnter={() => {
-          setScrollState((current) => ({
-            ...current,
-            visible: true,
-          }));
+          if (railRef.current) {
+            railRef.current.dataset.visible = "true";
+          }
         }}
         onPointerMove={() => {
-          setScrollState((current) => ({
-            ...current,
-            visible: true,
-          }));
+          if (railRef.current) {
+            railRef.current.dataset.visible = "true";
+          }
+          if (hideTimerRef.current !== null) {
+            window.clearTimeout(hideTimerRef.current);
+          }
+          hideTimerRef.current = window.setTimeout(() => {
+            if (railRef.current) {
+              railRef.current.dataset.visible = "false";
+            }
+          }, AUTO_HIDE_DELAY);
         }}
         onPointerLeave={() => {
-          setScrollState((current) => ({
-            ...current,
-            visible: false,
-          }));
+          if (railRef.current) {
+            railRef.current.dataset.visible = "false";
+          }
         }}
       >
         <div className="scroll-shell__content">{children}</div>
       </div>
 
       <div
+        ref={railRef}
         className="scroll-shell__rail"
-        data-visible={scrollState.visible ? "true" : "false"}
+        data-visible="false"
         aria-hidden="true"
       >
         <div
+          ref={thumbRef}
           className="scroll-shell__thumb"
-          style={{
-            height: `${scrollState.thumbHeight}px`,
-            transform: `translateY(${scrollState.thumbOffset}px)`,
-          }}
+          style={{ "--scroll-progress": "0" } as CSSProperties}
         />
       </div>
     </div>
