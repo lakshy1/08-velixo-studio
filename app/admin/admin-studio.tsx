@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SiteContent, ServiceItem, TeamMember, ReviewItem } from "@/lib/site-content";
 
-type ContactSubmission = {
+export type ContactSubmission = {
   id: number;
   full_name: string;
   email: string;
@@ -27,6 +27,7 @@ type AdminStudioProps = {
     lastUpdated: string;
   };
   submissions: ContactSubmission[];
+  offlineMessage?: string;
 };
 
 type SectionId =
@@ -154,6 +155,7 @@ export default function AdminStudio({
   published,
   metrics,
   submissions,
+  offlineMessage,
 }: AdminStudioProps) {
   const router = useRouter();
   const [draft, setDraft] = useState<SiteContent>(initialDraft);
@@ -347,6 +349,11 @@ export default function AdminStudio({
 
         <main className="grid min-w-0 flex-1 gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)]">
           <section className="space-y-6">
+            {offlineMessage ? (
+              <div className="rounded-[1.6rem] border border-amber-400/20 bg-amber-400/10 px-5 py-4 text-sm text-amber-100">
+                {offlineMessage}
+              </div>
+            ) : null}
             <div className="surface-panel-strong rounded-[2rem] p-5 sm:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
