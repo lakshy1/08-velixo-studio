@@ -8,6 +8,7 @@ const ADMIN_COOKIE_PAYLOAD = "velixo-admin-panel";
 
 export function getAdminSecret() {
   return (
+    process.env.Admin_Panel_Secret ||
     process.env.ADMIN_PANEL_SECRET ||
     process.env.Supabase_Password ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
