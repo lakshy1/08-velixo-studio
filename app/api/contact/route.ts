@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createContactSubmission } from "@/lib/supabase-db";
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +9,11 @@ export async function POST(request: Request) {
     const email = String(formData.get("email") || "").trim();
     const subject = String(formData.get("subject") || "").trim();
     const message = String(formData.get("message") || "").trim();
+    const phone = String(formData.get("phone") || "").trim();
+    const inquiryType = String(formData.get("inquiryType") || "").trim();
+    const attachment = formData.get("attachment");
+    const attachmentName =
+      attachment instanceof File && attachment.name ? attachment.name : "";
 
     if (!fullName || !email || !subject || !message) {
       return NextResponse.json(
@@ -16,9 +22,18 @@ export async function POST(request: Request) {
       );
     }
 
+    await createContactSubmission({
+      fullName,
+      email,
+      phone,
+      inquiryType,
+      subject,
+      message,
+      attachmentName,
+    });
+
     return NextResponse.json({
-      message:
-        "Thanks. Your inquiry has been received and is ready to be wired into EmailJS, Formspree, or a backend inbox when you add provider credentials.",
+      message: "Thanks. Your inquiry has been saved to the Supabase inbox.",
     });
   } catch (error) {
     return NextResponse.json(

@@ -2,29 +2,17 @@
 
 import type { FormEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  defaultSiteContent,
+  normalizeSiteContent,
+  type SiteContent,
+} from "@/lib/site-content";
 
 type CounterProps = {
   target: number;
   suffix?: string;
   active: boolean;
   delayMs?: number;
-};
-
-type Review = {
-  id: number;
-  name: string;
-  company: string;
-  date: string;
-  rating: number;
-  text: string;
-  initials: string;
-};
-
-type Service = {
-  title: string;
-  description: string;
-  points: string[];
-  technologies: string[];
 };
 
 type AssistantMessage = {
@@ -99,151 +87,6 @@ function LinkedinIcon({ className }: { className?: string }) {
   );
 }
 
-const navItems = [
-  { label: "Home", href: "#home" },
-  { label: "Services", href: "#services" },
-  { label: "Work", href: "#work" },
-  { label: "Team", href: "#team" },
-  { label: "Reviews", href: "#reviews" },
-  { label: "Contact", href: "#contact" },
-];
-
-const services: Service[] = [
-  {
-    title: "Web Design",
-    description:
-      "Conversion-focused websites built with rhythm, clarity, and performance at the center.",
-    points: [
-      "Brand-first layouts that make the story easy to scan.",
-      "Responsive sections that stay elegant across breakpoints.",
-      "Conversion-focused structure for stronger landing performance.",
-    ],
-    technologies: ["Next.js", "Framer Motion", "Tailwind CSS", "GSAP"],
-  },
-  {
-    title: "App Design",
-    description:
-      "Intuitive mobile and desktop product experiences that feel polished from the first tap.",
-    points: [
-      "Clear user flows built for fast decision-making.",
-      "Component systems that scale across product surfaces.",
-      "High-fidelity prototypes for stakeholder alignment.",
-    ],
-    technologies: ["Figma", "React Native", "MUI", "Lottie"],
-  },
-  {
-    title: "Graphic Design",
-    description:
-      "Brand systems, motion assets, and visual identities that stay consistent across every touchpoint.",
-    points: [
-      "Identity systems that stay consistent in every format.",
-      "Motion-ready assets for social and presentation use.",
-      "Visual language built to feel premium and memorable.",
-    ],
-    technologies: ["Adobe Illustrator", "After Effects", "Figma", "Canva"],
-  },
-  {
-    title: "SaaS Solutions",
-    description:
-      "End-to-end SaaS design and development from MVP foundations to scale-ready product systems.",
-    points: [
-      "Modular product architecture for long-term growth.",
-      "Dashboard and workflow design that reduces friction.",
-      "Launch-ready systems with room to iterate quickly.",
-    ],
-    technologies: ["Next.js", "Node.js", "PostgreSQL", "Supabase"],
-  },
-  {
-    title: "Content Creation",
-    description:
-      "Short-form video editing, branded content, motion graphics, and polished production workflows built to keep your story moving.",
-    points: [
-      "Short-form edits tailored for social-first attention spans.",
-      "Branded motion treatments with consistent pacing.",
-      "Production workflows for fast, repeatable content output.",
-    ],
-    technologies: ["Premiere Pro", "After Effects", "CapCut", "DaVinci Resolve"],
-  },
-  {
-    title: "Product Testing",
-    description:
-      "Manual and automated QA, performance checks, and launch validation for confidence at delivery.",
-    points: [
-      "Coverage planning for critical user journeys.",
-      "Regression checks that reduce release risk.",
-      "Performance validation before launch windows.",
-    ],
-    technologies: ["Playwright", "Cypress", "Lighthouse", "Jest"],
-  },
-  {
-    title: "AI Integration",
-    description:
-      "LLM workflows, automation, and intelligent assistants that reduce friction and unlock speed.",
-    points: [
-      "Workflow automation that removes manual overhead.",
-      "Assistant-style experiences for faster user support.",
-      "Integrated AI features that fit the product context.",
-    ],
-    technologies: ["OpenAI API", "LangChain", "Vercel AI SDK", "Pinecone"],
-  },
-  {
-    title: "SEO Optimization",
-    description:
-      "Technical SEO, on-page strategy, and performance tuning that grow visibility with intent.",
-    points: [
-      "Technical fixes that help search bots understand the site.",
-      "On-page structure for stronger ranking signals.",
-      "Performance tuning that supports better discoverability.",
-    ],
-    technologies: ["Google Search Console", "Ahrefs", "Screaming Frog", "Schema.org"],
-  },
-  {
-    title: "Cloud Services",
-    description:
-      "Cloud deployments, DevOps pipelines, and scalable infrastructure ready for growth spikes.",
-    points: [
-      "Deployment pipelines built for repeatable releases.",
-      "Infrastructure planning that supports scaling needs.",
-      "Observability and maintenance for operational confidence.",
-    ],
-    technologies: ["AWS", "Docker", "GitHub Actions", "Vercel"],
-  },
-];
-
-const clientNames = [
-  "TechNova",
-  "Finspire",
-  "Cloudex",
-  "RoamApp",
-  "Medisync",
-  "Buildify",
-  "Launchly",
-  "ZestPay",
-];
-
-const projectNames = [
-  "Project Orion",
-  "Dashboard X",
-  "Shopify Migration",
-  "AI Chatbot Suite",
-  "Mobile Rebrand 2024",
-  "Cloud Ops Revamp",
-];
-
-const offerItems = [
-  "UI/UX Design & Product Experience",
-  "AI Automation & Intelligent Integrations",
-  "Custom SaaS Product Engineering",
-  "Creative Production & Content Strategy",
-  "Quality Assurance & Managed Support",
-  "Cloud Infrastructure & DevOps",
-];
-
-const assistantSuggestions = [
-  "Luxury SaaS landing page",
-  "AI lead qualification flow",
-];
-
 const mobileDockItems = [
   { label: "Home", href: "#home", icon: "home" as const },
   { label: "Services", href: "#services", icon: "services" as const },
@@ -253,134 +96,6 @@ const mobileDockItems = [
 
 const dockSectionOrder = ["home", "services", "work", "contact"] as const;
 type DockSection = (typeof dockSectionOrder)[number];
-
-const stats = [
-  { target: 50, suffix: "+", label: "Projects" },
-  { target: 20, suffix: "+", label: "Clients" },
-  { target: 5, suffix: "+", label: "Years of Experience" },
-  { target: 100, suffix: "%", label: "Client Satisfaction" },
-];
-
-const processSteps = [
-  {
-    step: "01",
-    title: "Discovery & Strategy",
-    description: "We unpack the problem, audience, market, and success metrics before any pixels move.",
-  },
-  {
-    step: "02",
-    title: "Design & Prototyping",
-    description: "We shape the story, interface, and motion into something crisp, usable, and memorable.",
-  },
-  {
-    step: "03",
-    title: "Development & Build",
-    description: "We translate the experience into clean, scalable code that stays fast and maintainable.",
-  },
-  {
-    step: "04",
-    title: "Testing & QA",
-    description: "We verify behavior, polish details, and harden the release across devices and browsers.",
-  },
-  {
-    step: "05",
-    title: "Launch & Scale",
-    description: "We deploy, measure, iterate, and keep the product ready for the next stage of growth.",
-  },
-];
-
-const team = [
-  {
-    name: "Lakshya Sehgal",
-    role: "Full Stack AI Engineer",
-    initials: "LS",
-    skills: ["Web/Android Development", "AI-ML Integration", "DevOps"],
-    bio: "Builds product systems, AI features, and deployment pipelines with a strong end-to-end delivery mindset.",
-    portfolioUrl: "https://lakshyaps.netlify.app/",
-    linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
-  },
-  {
-    name: "Honey Jain",
-    role: "Full Stack Developer",
-    initials: "HJ",
-    skills: ["MERN Stack", "Next.js", "Configurations", "Testing"],
-    bio: "Delivers robust app experiences, clean integrations, and reliable front-to-back implementation.",
-    portfolioUrl: "https://lakshyaps.netlify.app/",
-    linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
-  },
-  {
-    name: "Ovesh",
-    role: "Content Admin",
-    initials: "OV",
-    skills: ["Audio Video Editing", "Graphic Designing", "Content Strategy"],
-    bio: "Shapes content operations, sharpens visual output, and keeps media delivery organized across campaigns.",
-    portfolioUrl: "https://lakshyaps.netlify.app/",
-    linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
-  },
-];
-
-const initialReviews: Review[] = [
-  {
-    id: 1,
-    name: "Priya N.",
-    company: "Finspire",
-    date: "May 2026",
-    rating: 5,
-    text: "The team understood our product immediately. The design feels premium, and the launch process was very organized.",
-    initials: "PN",
-  },
-  {
-    id: 2,
-    name: "Daniel K.",
-    company: "Cloudex",
-    date: "April 2026",
-    rating: 5,
-    text: "They cleaned up a messy experience into a clear product story. Our internal team now has a much easier time selling it.",
-    initials: "DK",
-  },
-  {
-    id: 3,
-    name: "Maya R.",
-    company: "RoamApp",
-    date: "April 2026",
-    rating: 5,
-    text: "Sharp communication, thoughtful work, and genuinely fast delivery. They felt like an extension of our own team.",
-    initials: "MR",
-  },
-];
-
-const faqs = [
-  {
-    question: "How long does a project usually take?",
-    answer:
-      "Most landing pages ship in 2 to 4 weeks, while SaaS or custom product builds usually take 6 to 12 weeks depending on scope and integrations.",
-  },
-  {
-    question: "What is your pricing model?",
-    answer:
-      "We use fixed-scope estimates for defined work and monthly retainers for ongoing design, development, and growth support.",
-  },
-  {
-    question: "Do you work with startups?",
-    answer:
-      "Yes. We regularly help founders turn early ideas into crisp MVPs, investor-ready demos, and launch-ready websites.",
-  },
-  {
-    question: "Can you maintain my project after launch?",
-    answer:
-      "Absolutely. We can stay on for optimization, bug fixes, new features, analytics, content updates, or infrastructure support.",
-  },
-  {
-    question: "Do you offer white-label services?",
-    answer:
-      "Yes. We can work as a silent delivery partner for agencies, consultants, and internal product teams.",
-  },
-  {
-    question: "Which technologies do you specialize in?",
-    answer:
-      "Next.js, React, Tailwind, Node, APIs, cloud platforms, analytics, and AI integrations built around modern product teams.",
-  },
-];
 
 function scrollToSection(href: string) {
   if (!href.startsWith("#")) {
@@ -566,7 +281,38 @@ function DockIcon({
   }
 }
 
-export default function AgencyHome() {
+type AgencyHomeProps = {
+  initialContent?: Partial<SiteContent>;
+};
+
+export default function AgencyHome({ initialContent }: AgencyHomeProps) {
+  const siteContent = useMemo(
+    () => normalizeSiteContent(initialContent ?? defaultSiteContent),
+    [initialContent],
+  );
+  const navItems = siteContent.navigation;
+  const services = siteContent.services;
+  const clientNames = siteContent.clientNames;
+  const projectNames = siteContent.projectNames;
+  const offerItems = siteContent.offers;
+  const assistantSuggestions = siteContent.assistant.suggestions;
+  const stats = siteContent.stats;
+  const processSteps = siteContent.processSteps;
+  const team = siteContent.team;
+  const reviewSeed = siteContent.reviews;
+  const faqs = siteContent.faqs;
+  const hero = siteContent.hero;
+  const brand = siteContent.brand;
+  const servicesSection = siteContent.servicesSection;
+  const showcaseSection = siteContent.showcaseSection;
+  const processSection = siteContent.processSection;
+  const teamSection = siteContent.teamSection;
+  const reviewsSection = siteContent.reviewsSection;
+  const faqSection = siteContent.faqSection;
+  const contactSection = siteContent.contactSection;
+  const assistantSection = siteContent.assistant;
+  const footer = siteContent.footer;
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">(() => {
     if (typeof window === "undefined") {
@@ -584,8 +330,7 @@ export default function AgencyHome() {
     {
       id: 1,
       role: "assistant",
-      content:
-        "Hi, I’m Studio AI. Tell me what you want to build and I’ll shape the brief, scope, and next steps.",
+      content: assistantSection.greeting,
     },
   ]);
   const [assistantLoading, setAssistantLoading] = useState(false);
@@ -594,7 +339,7 @@ export default function AgencyHome() {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [activeTeamCard, setActiveTeamCard] = useState<string | null>(null);
   const [activeServiceIndex, setActiveServiceIndex] = useState<number | null>(null);
-  const [reviews, setReviews] = useState(initialReviews);
+  const [reviews, setReviews] = useState(reviewSeed);
   const [reviewForm, setReviewForm] = useState({
     name: "",
     company: "",
@@ -615,7 +360,7 @@ export default function AgencyHome() {
 
   const projectPills = useMemo(
     () => [...projectNames, ...projectNames],
-    [],
+    [projectNames],
   );
 
   const count50 = useCountUp({ target: stats[0].target, suffix: stats[0].suffix, active: statsVisible, delayMs: 300 });
@@ -688,7 +433,7 @@ export default function AgencyHome() {
     }, 2400);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [offerItems.length]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -900,7 +645,7 @@ export default function AgencyHome() {
         throw new Error("We could not save the review right now.");
       }
 
-      const nextReview: Review = {
+      const nextReview: SiteContent["reviews"][number] = {
         id: Date.now(),
         name: reviewForm.name || "Anonymous",
         company: reviewForm.company || "Client",
@@ -984,13 +729,13 @@ export default function AgencyHome() {
             className="group flex items-center gap-3"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-sm font-bold text-white shadow-lg shadow-black/25">
-              N
+              {brand.mark}
             </span>
             <div className="leading-tight">
               <div className="font-semibold tracking-tight text-[var(--text)]">
-                Nexvora
+                {brand.name}
               </div>
-              <div className="text-xs text-[var(--text-soft)]">Design. Build. Launch.</div>
+              <div className="text-xs text-[var(--text-soft)]">{brand.tagline}</div>
             </div>
           </a>
 
@@ -1097,15 +842,15 @@ export default function AgencyHome() {
             <div className="mx-auto flex w-full max-w-[22rem] flex-col items-center space-y-5 sm:max-w-3xl lg:mx-0 lg:max-w-none lg:items-start lg:space-y-8">
               <div className="inline-flex w-fit items-center gap-3 rounded-full chip px-4 py-2 text-sm text-[var(--text-soft)] backdrop-blur">
                 <span className="dot" />
-                Premium digital agency for design, development, AI, and cloud
+                {hero.eyebrow}
               </div>
 
               <div className="space-y-4 sm:space-y-6">
                 <h1 className="section-title mx-auto max-w-4xl text-[2.75rem] font-bold leading-[0.96] tracking-tight text-[var(--text)] sm:text-6xl lg:mx-0 lg:text-[4.9rem]">
-                  We Build Digital Products That Scale
+                  {hero.title}
                 </h1>
                 <p className="mx-auto max-w-2xl text-base leading-7 text-[var(--text-soft)] sm:text-xl lg:mx-0">
-                  Design. Development. AI. Cloud. All under one roof, with the clarity of a product team and the polish of a luxury studio.
+                  {hero.description}
                 </p>
               </div>
 
@@ -1115,14 +860,14 @@ export default function AgencyHome() {
                   onClick={(event) => handleSmoothAnchor(event, "#contact")}
                   className="inline-flex min-w-[15rem] items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-black/30 transition-transform hover:-translate-y-0.5 sm:min-w-0"
                 >
-                  Get a Free Quote
+                  {hero.primaryCta}
                 </a>
                 <a
                   href="#work"
                   onClick={(event) => handleSmoothAnchor(event, "#work")}
                   className="inline-flex min-w-[15rem] items-center justify-center rounded-full chip px-7 py-3.5 text-base font-semibold text-[var(--text)] backdrop-blur transition-colors hover:bg-white/10 sm:min-w-0"
                 >
-                  See Our Work ↓
+                  {hero.secondaryCta} ↓
                 </a>
               </div>
             </div>
@@ -1134,7 +879,7 @@ export default function AgencyHome() {
                 <div className="flex justify-center">
                   <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur">
                     <div className="text-[0.72rem] uppercase tracking-[0.34em] text-[var(--text-soft)]">
-                      Nexvora Engine
+                      {hero.badge}
                     </div>
                   </div>
                 </div>
@@ -1193,7 +938,7 @@ export default function AgencyHome() {
                           {widgetProgress}
                         </div>
                         <div className="mt-1 text-[0.5rem] uppercase tracking-[0.28em] text-[var(--text-soft)]">
-                          Percent
+                          {hero.engineLabel}
                         </div>
                       </div>
                     </div>
@@ -1234,10 +979,10 @@ export default function AgencyHome() {
           </div>
 
           <div className="mt-12 hidden items-center gap-3 text-sm text-[var(--text-soft)] sm:flex">
-            <span className="text-[var(--text)]">Scroll</span>
-            <span className="dot" />
-            <span>Discover the full experience below</span>
-          </div>
+          <span className="text-[var(--text)]">Scroll</span>
+          <span className="dot" />
+          <span>{hero.scrollHint}</span>
+        </div>
         </section>
 
         <section ref={statsRef} className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -1267,14 +1012,14 @@ export default function AgencyHome() {
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
-                Services
+                {servicesSection.kicker}
               </div>
               <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                A full stack of capabilities, designed to move as one.
+                {servicesSection.title}
               </h2>
             </div>
             <p className="section-lead">
-              Every service is structured to help a business launch faster, look stronger, and scale with less friction.
+              {servicesSection.lead}
             </p>
           </div>
 
@@ -1318,14 +1063,14 @@ export default function AgencyHome() {
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
-                Work
+                {showcaseSection.kicker}
               </div>
               <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                Client logos and projects, moving in a smooth continuous loop.
+                {showcaseSection.title}
               </h2>
             </div>
             <p className="section-lead">
-              This space is ideal for deep case studies, measurable results, and outcome-driven portfolio stories.
+              {showcaseSection.lead}
             </p>
           </div>
 
@@ -1375,7 +1120,7 @@ export default function AgencyHome() {
 
           {workVisible ? (
             <div className="mt-6 rounded-[2rem] surface-panel px-5 py-4 text-sm text-[var(--text-soft)]">
-              Add 3 to 5 deep-dive case studies here to match top-tier agency expectations. This build is ready for them.
+              {showcaseSection.note}
             </div>
           ) : null}
         </section>
@@ -1387,14 +1132,14 @@ export default function AgencyHome() {
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
-                Process
+                {processSection.kicker}
               </div>
               <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                A simple workflow with enough structure to keep momentum high.
+                {processSection.title}
               </h2>
             </div>
             <p className="section-lead">
-              The timeline stays transparent, so clients always know what is happening next and where the project stands.
+              {processSection.lead}
             </p>
           </div>
 
@@ -1425,14 +1170,14 @@ export default function AgencyHome() {
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
-                Team
+                {teamSection.kicker}
               </div>
               <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                Small team energy, senior-level execution.
+                {teamSection.title}
               </h2>
             </div>
             <p className="section-lead">
-              These cards are ready for photos, LinkedIn links, and external portfolio URLs once your team assets are in place.
+              {teamSection.lead}
             </p>
           </div>
 
@@ -1539,10 +1284,10 @@ export default function AgencyHome() {
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
-                Reviews
+                {reviewsSection.kicker}
               </div>
               <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                Social proof that feels human.
+                {reviewsSection.title}
               </h2>
             </div>
             <button
@@ -1550,7 +1295,7 @@ export default function AgencyHome() {
               onClick={() => setReviewModalOpen(true)}
               className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-6 py-3 text-sm font-semibold text-white"
             >
-              Add Your Review
+              {reviewsSection.ctaButton}
             </button>
           </div>
 
@@ -1614,13 +1359,13 @@ export default function AgencyHome() {
                 <div className="relative flex items-start justify-between gap-4 border-b border-white/5 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] sm:px-5">
                   <div className="relative">
                     <div className={`text-[10px] uppercase tracking-[0.34em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
-                      Studio AI
+                      {assistantSection.dockTitle}
                     </div>
                     <div className={`mt-2 text-lg font-semibold ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
-                      Project chat
+                      {assistantSection.dockTitle}
                     </div>
                     <p className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#7a6850]" : "text-white/56"}`}>
-                      Shape the brief, scope, and next steps in one place.
+                      {assistantSection.dockDescription}
                     </p>
                   </div>
                   <button
@@ -1631,7 +1376,7 @@ export default function AgencyHome() {
                         ? "border-black/10 bg-white/70 text-[#181310] hover:bg-white"
                         : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
                     }`}
-                    aria-label="Close Studio AI"
+                    aria-label={`Close ${assistantSection.dockTitle}`}
                   >
                     &times;
                   </button>
@@ -1695,8 +1440,8 @@ export default function AgencyHome() {
                         value={assistantInput}
                         onChange={(event) => setAssistantInput(event.target.value)}
                         className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]"
-                        placeholder="Message Studio AI..."
-                        aria-label="Message Studio AI"
+                        placeholder={`Message ${assistantSection.dockTitle}...`}
+                        aria-label={`Message ${assistantSection.dockTitle}`}
                       />
                       <button
                         type="submit"
@@ -1732,13 +1477,13 @@ export default function AgencyHome() {
                 <div className="relative flex items-start justify-between gap-4 border-b border-white/5 px-4 py-4 sm:px-5">
                   <div className="relative">
                     <div className={`text-[10px] uppercase tracking-[0.34em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
-                      Studio AI
+                      {assistantSection.dockTitle}
                     </div>
                     <div className={`mt-2 text-lg font-semibold ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
-                      Project chat
+                      {assistantSection.dockTitle}
                     </div>
                     <p className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#7a6850]" : "text-white/56"}`}>
-                      Shape the brief, scope, and next steps in one place.
+                      {assistantSection.dockDescription}
                     </p>
                   </div>
                   <button
@@ -1749,7 +1494,7 @@ export default function AgencyHome() {
                         ? "border-black/10 bg-white/70 text-[#181310] hover:bg-white"
                         : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
                     }`}
-                    aria-label="Close Studio AI"
+                    aria-label={`Close ${assistantSection.dockTitle}`}
                   >
                     ×
                   </button>
@@ -1813,8 +1558,8 @@ export default function AgencyHome() {
                         value={assistantInput}
                         onChange={(event) => setAssistantInput(event.target.value)}
                         className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]"
-                        placeholder="Message Studio AI..."
-                        aria-label="Message Studio AI"
+                        placeholder={`Message ${assistantSection.dockTitle}...`}
+                        aria-label={`Message ${assistantSection.dockTitle}`}
                       />
                       <button
                         type="submit"
@@ -1864,14 +1609,14 @@ export default function AgencyHome() {
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
-                Contact
+                {contactSection.kicker}
               </div>
               <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                Let&apos;s build something great.
+                {contactSection.title}
               </h2>
             </div>
             <p className="max-w-2xl text-[var(--text-soft)]">
-              The form is wired to a Next.js route so it works immediately. Add your provider later for email delivery or storage.
+              {contactSection.lead}
             </p>
           </div>
 
@@ -1970,15 +1715,15 @@ export default function AgencyHome() {
                 <div className="mt-4 space-y-4 text-sm text-[var(--text-soft)]">
                   <div className="flex items-center justify-between gap-4 rounded-2xl surface-panel px-4 py-4">
                     <span>Email</span>
-                    <span className="text-[var(--text)]">hello@nexvora.com</span>
+                    <span className="text-[var(--text)]">{contactSection.email}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4 rounded-2xl surface-panel px-4 py-4">
                     <span>WhatsApp</span>
-                    <span className="text-[var(--text)]">+1 000 000 0000</span>
+                    <span className="text-[var(--text)]">{contactSection.whatsapp}</span>
                   </div>
                   <div className="flex items-center justify-between gap-4 rounded-2xl surface-panel px-4 py-4">
                     <span>City</span>
-                    <span className="text-[var(--text)]">Remote / Global</span>
+                    <span className="text-[var(--text)]">{contactSection.city}</span>
                   </div>
                 </div>
               </div>
@@ -1988,17 +1733,17 @@ export default function AgencyHome() {
                   Booking
                 </div>
                 <h3 className="mt-3 text-2xl font-semibold text-[var(--text)]">
-                  Book a discovery call when you are ready.
+                  {contactSection.bookingTitle}
                 </h3>
                 <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  Add your Calendly link later to turn this panel into a direct booking flow for qualified leads.
+                  {contactSection.bookingDescription}
                 </p>
                 <a
                   href="#home"
                   onClick={(event) => handleSmoothAnchor(event, "#home")}
                   className="mt-5 inline-flex items-center justify-center rounded-full surface-panel px-6 py-3 text-sm font-semibold text-[var(--text)]"
                 >
-                  Book a Call
+                  {contactSection.bookingButton}
                 </a>
               </div>
             </div>
@@ -2009,10 +1754,10 @@ export default function AgencyHome() {
           <div className="mb-8 flex items-end justify-between">
             <div>
               <div className="section-kicker">
-                FAQ
+                {faqSection.kicker}
               </div>
               <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                Questions clients ask before they say yes.
+                {faqSection.title}
               </h2>
             </div>
           </div>
@@ -2055,15 +1800,15 @@ export default function AgencyHome() {
               <div className="space-y-5 pb-2">
                 <div className="flex items-center gap-3">
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-white font-bold">
-                    N
+                    {brand.mark}
                   </span>
                   <div>
-                    <div className="font-semibold text-[var(--text)]">Nexvora</div>
-                    <div className="text-sm text-[var(--text-soft)]">Design. Build. Launch.</div>
+                    <div className="font-semibold text-[var(--text)]">{brand.name}</div>
+                    <div className="text-sm text-[var(--text-soft)]">{brand.tagline}</div>
                   </div>
                 </div>
                 <p className="max-w-sm text-sm leading-7 text-[var(--text-soft)]">
-                  A modern digital agency website built to showcase services, trust, process, and AI-assisted growth.
+                  {footer.description}
                 </p>
               </div>
 
@@ -2072,14 +1817,14 @@ export default function AgencyHome() {
                   Services
                 </div>
                 <div className="mt-4 grid gap-3 text-sm text-[var(--text-soft)]">
-                  {services.slice(0, 5).map((service) => (
+                  {footer.serviceLinks.map((service) => (
                     <a
-                      key={service.title}
+                      key={service}
                       href="#services"
                       onClick={(event) => handleSmoothAnchor(event, "#services")}
                       className="transition-colors hover:text-[var(--text)]"
                     >
-                      {service.title}
+                      {service}
                     </a>
                   ))}
                 </div>
@@ -2090,7 +1835,7 @@ export default function AgencyHome() {
                   Company
                 </div>
                 <div className="mt-4 grid gap-3 text-sm text-[var(--text-soft)]">
-                  {["About", "Team", "Careers", "Blog"].map((item) => (
+                  {footer.companyLinks.map((item) => (
                     <a
                       key={item}
                       href="#home"
@@ -2108,9 +1853,9 @@ export default function AgencyHome() {
                   Contact
                 </div>
                 <div className="mt-4 grid gap-3 text-sm text-[var(--text-soft)]">
-                  <div>hello@nexvora.com</div>
-                  <div>+1 000 000 0000</div>
-                  <div>Remote / Global</div>
+                  <div>{contactSection.email}</div>
+                  <div>{contactSection.whatsapp}</div>
+                  <div>{contactSection.city}</div>
                   <form className="mt-4 flex gap-2">
                     <input className="field flex-1" placeholder="Newsletter email" />
                     <button
@@ -2125,7 +1870,7 @@ export default function AgencyHome() {
             </div>
 
             <div className="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
-              <div>Copyright 2026 Nexvora. All rights reserved.</div>
+              <div>{footer.copyright}</div>
               <div className="flex flex-wrap gap-5">
                 <a href="#home" onClick={(event) => handleSmoothAnchor(event, "#home")}>Privacy Policy</a>
                 <a href="#home" onClick={(event) => handleSmoothAnchor(event, "#home")}>Terms of Service</a>
@@ -2274,11 +2019,14 @@ export default function AgencyHome() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <div className="text-sm uppercase tracking-[0.22em] text-[var(--accent-2)]">
-                  Add Your Review
+                  {reviewsSection.ctaButton}
                 </div>
                 <h3 className="mt-2 text-2xl font-semibold text-[var(--text)]">
-                  Tell us what working together felt like.
+                  {reviewsSection.modalTitle}
                 </h3>
+                <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
+                  {reviewsSection.modalDescription}
+                </p>
               </div>
               <button
                 type="button"

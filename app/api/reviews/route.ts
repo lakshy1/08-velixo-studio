@@ -1,4 +1,22 @@
 import { NextResponse } from "next/server";
+import { createReview, listPublishedReviews } from "@/lib/supabase-db";
+
+export async function GET() {
+  try {
+    const reviews = await listPublishedReviews();
+    return NextResponse.json({ reviews });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "We could not load reviews.",
+      },
+      { status: 500 },
+    );
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -16,9 +34,16 @@ export async function POST(request: Request) {
       );
     }
 
+    await createReview({
+      name: body.name,
+      company: body.company,
+      text: body.text,
+      rating: Number(body.rating || 5),
+    });
+
     return NextResponse.json({
       ok: true,
-      message: "Review accepted. Connect Supabase or Firebase next if you want permanent storage.",
+      message: "Review published successfully.",
     });
   } catch (error) {
     return NextResponse.json(
