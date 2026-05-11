@@ -140,6 +140,62 @@ async function initializeSchema() {
     values ('home', ${JSON.stringify(defaultSiteContent)}::jsonb, ${JSON.stringify(defaultSiteContent)}::jsonb)
     on conflict (slug) do nothing
   `;
+
+  await ensureSeedTeamMember();
+}
+
+async function ensureSeedTeamMember() {
+  const sql = getDb();
+
+  const rows = await sql<SiteContentRow[]>`
+    select slug, draft, published, updated_at
+    from site_content
+    where slug = 'home'
+    limit 1
+  `;
+
+  const row = rows[0];
+  if (!row) {
+    return;
+  }
+
+  const draft = normalizeSiteContent(row.draft as Partial<SiteContent>);
+  const published = normalizeSiteContent(row.published as Partial<SiteContent>);
+  const seededMember = {
+    name: "Sainee Kumar",
+    role: "Data Analyst",
+    initials: "SK",
+    skills: ["Data Visualisation", "Data Cleaning", "Business Analysis"],
+    bio:
+      "Turns raw data into clear stories, actionable dashboards, and decisions that are easy for teams to trust.",
+    portfolioUrl: "#contact",
+    linkedinUrl: "#contact",
+  };
+
+  const addMember = (team: SiteContent["team"]) =>
+    team.some((member) => member.name === seededMember.name) ? team : [...team, seededMember];
+
+  const nextDraft = {
+    ...draft,
+    team: addMember(draft.team),
+  };
+
+  const nextPublished = {
+    ...published,
+    team: addMember(published.team),
+  };
+
+  if (JSON.stringify(nextDraft) === JSON.stringify(draft) && JSON.stringify(nextPublished) === JSON.stringify(published)) {
+    return;
+  }
+
+  await sql`
+    update site_content
+    set draft = ${JSON.stringify(nextDraft)}::jsonb,
+        published = ${JSON.stringify(nextPublished)}::jsonb,
+        updated_at = now()
+    where slug = 'home'
+  `;
 }
 
 export async function getSiteContent(mode: "draft" | "published" = "published") {

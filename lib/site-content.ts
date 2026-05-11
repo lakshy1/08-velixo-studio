@@ -41,6 +41,18 @@ export type StatItem = {
   label: string;
 };
 
+export type HomepageSectionId =
+  | "hero"
+  | "stats"
+  | "services"
+  | "showcase"
+  | "process"
+  | "team"
+  | "reviews"
+  | "contact"
+  | "faqs"
+  | "footer";
+
 export type ProcessStep = {
   step: string;
   title: string;
@@ -136,6 +148,7 @@ export type SiteContent = {
     companyLinks: string[];
   };
   offers: string[];
+  homepageOrder: HomepageSectionId[];
 };
 
 export const defaultSiteContent: SiteContent = {
@@ -387,6 +400,16 @@ export const defaultSiteContent: SiteContent = {
       portfolioUrl: "https://lakshyaps.netlify.app/",
       linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
     },
+    {
+      name: "Sainee Kumar",
+      role: "Data Analyst",
+      initials: "SK",
+      skills: ["Data Visualisation", "Data Cleaning", "Business Analysis"],
+      bio:
+        "Turns raw data into clear stories, actionable dashboards, and decisions that are easy for teams to trust.",
+      portfolioUrl: "#contact",
+      linkedinUrl: "#contact",
+    },
   ],
   reviewsSection: {
     kicker: "Reviews",
@@ -497,6 +520,18 @@ export const defaultSiteContent: SiteContent = {
     "Creative Production & Content Strategy",
     "Quality Assurance & Managed Support",
     "Cloud Infrastructure & DevOps",
+  ],
+  homepageOrder: [
+    "hero",
+    "stats",
+    "services",
+    "showcase",
+    "process",
+    "team",
+    "reviews",
+    "contact",
+    "faqs",
+    "footer",
   ],
 };
 

@@ -1,10 +1,11 @@
 ﻿"use client";
 
-import type { FormEvent, MouseEvent } from "react";
+import type { CSSProperties, FormEvent, MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   defaultSiteContent,
   normalizeSiteContent,
+  type HomepageSectionId,
   type SiteContent,
 } from "@/lib/site-content";
 
@@ -312,6 +313,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
   const contactSection = siteContent.contactSection;
   const assistantSection = siteContent.assistant;
   const footer = siteContent.footer;
+  const homepageOrder = siteContent.homepageOrder;
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">(() => {
@@ -370,6 +372,15 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
   const widgetProgress = useAnimatedNumber(100, true, 1800);
   const [offerIndex, setOfferIndex] = useState(0);
   const activeService = activeServiceIndex === null ? null : services[activeServiceIndex];
+  const homepageOrderMap = useMemo(
+    () => new Map(homepageOrder.map((sectionId, index) => [sectionId, index])),
+    [homepageOrder],
+  );
+
+  function sectionOrderStyle(sectionId: HomepageSectionId) {
+    return { order: homepageOrderMap.get(sectionId) ?? 999 } as CSSProperties;
+  }
+
   function handleSmoothAnchor(
     event: MouseEvent<HTMLAnchorElement>,
     href: string,
@@ -833,9 +844,10 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
       </div>
       ) : null}
 
-      <main className="relative pb-24 pt-[5rem] md:pb-0 md:pt-[5.25rem]">
+      <main className="relative flex flex-col pb-24 pt-[5rem] md:pb-0 md:pt-[5.25rem]">
         <section
           id="home"
+          style={sectionOrderStyle("hero")}
           className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-7xl items-center justify-center px-4 py-0 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0"
         >
           <div className="grid w-full justify-items-center gap-6 text-center lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:justify-items-stretch lg:gap-10 lg:text-left">
@@ -891,7 +903,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                         ? "border-[rgba(170,136,66,0.10)] bg-[linear-gradient(180deg,rgba(253,248,236,0.99),rgba(246,232,205,0.94))]"
                         : "border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))]"
                     }`}
-                    style={{ "--fill": `${widgetProgress}%` } as React.CSSProperties}
+                    style={{ "--fill": `${widgetProgress}%` } as CSSProperties}
                   >
                     <div
                       className={`pointer-events-none absolute inset-0 ${
@@ -985,7 +997,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
         </div>
         </section>
 
-        <section ref={statsRef} className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <section ref={statsRef} style={sectionOrderStyle("stats")} className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid gap-4 rounded-[2rem] section-shell p-5 md:grid-cols-4">
             {[
               { value: count50, label: stats[0].label },
@@ -1008,7 +1020,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
           </div>
         </section>
 
-        <section id="services" className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
+        <section id="services" style={sectionOrderStyle("services")} className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
@@ -1058,6 +1070,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
         <section
           id="work"
           ref={workRef}
+          style={sectionOrderStyle("showcase")}
           className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1127,6 +1140,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
 
         <section
           id="process"
+          style={sectionOrderStyle("process")}
           className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1165,6 +1179,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
 
         <section
           id="team"
+          style={sectionOrderStyle("team")}
           className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1280,7 +1295,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
           </div>
         </section>
 
-        <section id="reviews" className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
+        <section id="reviews" style={sectionOrderStyle("reviews")} className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="section-kicker">
@@ -1604,6 +1619,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
 
         <section
           id="contact"
+          style={sectionOrderStyle("contact")}
           className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
         >
           <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -1750,7 +1766,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <section style={sectionOrderStyle("faqs")} className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="mb-8 flex items-end justify-between">
             <div>
               <div className="section-kicker">
@@ -1794,7 +1810,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
           </div>
         </section>
 
-        <footer className="surface-panel border-t border-white/10">
+        <footer style={sectionOrderStyle("footer")} className="surface-panel border-t border-white/10">
           <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
             <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
               <div className="space-y-5 pb-2">
