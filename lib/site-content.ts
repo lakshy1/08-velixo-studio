@@ -564,7 +564,7 @@ function deepMerge<T>(base: T, patch: Partial<T>): T {
     const result: Record<string, unknown> = { ...base };
 
     for (const [key, value] of Object.entries(patch)) {
-      if (value === undefined) {
+      if (value === undefined || value === null) {
         continue;
       }
 

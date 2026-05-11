@@ -884,9 +884,9 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
               </div>
             </div>
 
-            <div className="relative mt-1 w-full max-w-[22rem] sm:mt-4 sm:max-w-3xl lg:mt-0 lg:max-w-none">
+            <div className="relative mx-auto mt-1 w-full max-w-[22rem] self-center justify-self-center sm:mt-4 sm:max-w-3xl lg:mx-0 lg:mt-0 lg:max-w-none lg:self-stretch lg:justify-self-stretch">
               <div className="absolute inset-0 -z-10 rounded-[2rem] bg-[radial-gradient(circle_at_top_left,rgba(108,99,255,0.24),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(0,212,170,0.18),transparent_45%)] blur-3xl" />
-              <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-4 sm:p-6 xl:h-auto xl:min-h-0">
+              <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-3 sm:p-6 xl:h-auto xl:min-h-0">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(108,99,255,0.18),transparent_24%),radial-gradient(circle_at_82%_16%,rgba(53,227,177,0.1),transparent_22%),radial-gradient(circle_at_50%_100%,rgba(255,208,106,0.08),transparent_26%)]" />
                 <div className="flex justify-center">
                   <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur">
@@ -896,7 +896,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-3 xl:grid-cols-[1fr_1fr] xl:items-stretch">
+                <div className="mt-3 grid gap-3 xl:grid-cols-[1fr_1fr] xl:items-stretch sm:mt-4">
                   <div
                     className={`widget-water-shell relative hidden h-full min-h-[19.5rem] flex-col overflow-hidden rounded-[1.8rem] border p-4 xl:flex ${
                       theme === "light"
@@ -926,9 +926,9 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                       </span>
                     </div>
 
-                    <div className="relative mt-4 flex min-h-[14.5rem] flex-1 items-center justify-center">
+                    <div className="relative mt-4 flex min-h-[14.5rem] flex-1 items-center justify-center px-2">
                       <div
-                        className={`widget-water-tank absolute inset-x-[29%] top-[8%] bottom-[8%] overflow-hidden rounded-full border ${
+                        className={`widget-water-tank relative h-[13.5rem] w-full max-w-[11.5rem] overflow-hidden rounded-full border ${
                           theme === "light"
                             ? "border-[rgba(118,93,34,0.28)] bg-[linear-gradient(180deg,rgba(103,88,62,0.52),rgba(59,51,44,0.30))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02),0_18px_34px_rgba(0,0,0,0.10)]"
                             : "border-white/18 bg-[linear-gradient(180deg,rgba(9,14,28,0.96),rgba(9,14,28,0.7))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_18px_34px_rgba(0,0,0,0.16)]"
@@ -956,23 +956,23 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                     </div>
                   </div>
 
-                  <div className="flex h-full min-h-0 flex-col rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-3 sm:p-4">
-                    <div className="flex flex-1 flex-col justify-start gap-2 pb-2 pt-0.5 sm:pb-3 sm:pt-1">
+                  <div className="mx-auto flex h-full w-full max-w-[28rem] min-h-0 flex-col rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-2.5 sm:p-4">
+                    <div className="flex flex-1 flex-col items-center justify-start gap-1.5 pb-1.5 pt-0 sm:gap-2 sm:pb-3 sm:pt-1">
                       {offerItems.map((item, index) => {
                         const active = index === offerIndex;
                         return (
                           <div
                             key={item}
-                            className={`flex items-center rounded-[1.05rem] border px-4 py-[0.56rem] transition-all duration-500 ${
+                            className={`flex w-full max-w-[calc(100%-0.2rem)] items-center rounded-[1.05rem] border px-3.5 py-[0.5rem] transition-all duration-500 sm:px-4 sm:py-[0.56rem] ${
                               active
                                 ? "border-white/14 bg-white/[0.06] shadow-[0_10px_26px_rgba(0,0,0,0.14)]"
                                 : "border-white/8 bg-white/[0.025] opacity-65"
                             }`}
                             style={{
-                              transform: active ? "translateX(0)" : "translateX(4px)",
+                              transform: "translateX(0)",
                             }}
                           >
-                          <div className="flex w-full items-center gap-3">
+                            <div className="flex w-full items-center gap-3">
                               <span className={`h-2 w-2 rounded-full ${active ? "bg-[var(--accent-2)]" : "bg-white/20"}`} />
                               <div className="min-w-0">
                                 <div className={`truncate text-[0.9rem] font-medium tracking-tight ${active ? "text-[var(--text)]" : "text-[var(--text-soft)]"}`}>
@@ -1087,8 +1087,8 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
             </p>
           </div>
 
-          <div className="relative left-1/2 flex w-screen -translate-x-1/2 flex-col gap-6">
-            <div className="surface-panel-strong ml-auto w-[calc(100%-1rem)] rounded-[2rem] rounded-r-none p-6 sm:w-[calc(100%-1.5rem)] lg:w-[calc(100%-2rem)]">
+          <div className="relative mx-[calc(50%-50vw)] flex w-[100vw] flex-col gap-6 overflow-x-hidden">
+            <div className="surface-panel-strong ml-auto w-[calc(100vw-1rem)] rounded-[2rem] rounded-r-none p-6 sm:w-[calc(100vw-1.5rem)] lg:w-[calc(100vw-2rem)]">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Project names</div>
@@ -1096,7 +1096,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                 </div>
               </div>
               <div className="marquee project-marquee">
-                <div className="marquee-track reverse pl-6 sm:pl-8 lg:pl-10">
+                <div className="marquee-track reverse pl-0 sm:pl-0 lg:pl-0">
                   {projectPills.map((name, index) => (
                     <div
                       key={`${name}-pill-${index}`}
@@ -1109,7 +1109,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
               </div>
             </div>
 
-            <div className="surface-panel-strong mr-auto w-[calc(100%-1rem)] rounded-[2rem] rounded-l-none p-6 sm:w-[calc(100%-1.5rem)] lg:w-[calc(100%-2rem)]">
+            <div className="surface-panel-strong mr-auto w-[calc(100vw-1rem)] rounded-[2rem] rounded-l-none p-6 sm:w-[calc(100vw-1.5rem)] lg:w-[calc(100vw-2rem)]">
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div className="text-sm text-[var(--text-soft)]">Client logos</div>
@@ -1117,7 +1117,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                 </div>
               </div>
               <div className="marquee project-marquee">
-                <div className="marquee-track pl-6 sm:pl-8 lg:pl-10">
+                <div className="marquee-track pl-0 sm:pl-0 lg:pl-0">
                   {[...clientNames, ...clientNames].map((name, index) => (
                     <div
                       key={`${name}-logo-${index}`}
