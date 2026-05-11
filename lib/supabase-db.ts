@@ -161,28 +161,45 @@ async function ensureSeedTeamMember() {
 
   const draft = normalizeSiteContent(row.draft as Partial<SiteContent>);
   const published = normalizeSiteContent(row.published as Partial<SiteContent>);
-  const seededMember = {
-    name: "Sainee Kumar",
-    role: "Data Analyst",
-    initials: "SK",
-    skills: ["Data Visualisation", "Data Cleaning", "Business Analysis"],
-    bio:
-      "Turns raw data into clear stories, actionable dashboards, and decisions that are easy for teams to trust.",
-    portfolioUrl: "#contact",
-    linkedinUrl: "#contact",
-  };
+  const teamOrder = [
+    "Lakshya Sehgal",
+    "Honey Jain",
+    "Sainee Kumar",
+    "Ovesh",
+  ];
 
-  const addMember = (team: SiteContent["team"]) =>
-    team.some((member) => member.name === seededMember.name) ? team : [...team, seededMember];
+  const ensureTeamOrder = (team: SiteContent["team"]) => {
+    const hasSainee = team.some((member) => member.name === "Sainee Kumar");
+    const withSainee = hasSainee
+      ? team
+      : [
+          ...team.slice(0, 2),
+          {
+            name: "Sainee Kumar",
+            role: "Data Analyst",
+            initials: "SK",
+            skills: ["Data Visualisation", "Data Cleaning", "Business Analysis"],
+            bio:
+              "Turns raw data into clear stories, actionable dashboards, and decisions that are easy for teams to trust.",
+            portfolioUrl: "#contact",
+            linkedinUrl: "#contact",
+          },
+          ...team.slice(2),
+        ];
+
+    return teamOrder
+      .map((name) => withSainee.find((member) => member.name === name))
+      .filter((member): member is NonNullable<(typeof withSainee)[number]> => Boolean(member));
+  };
 
   const nextDraft = {
     ...draft,
-    team: addMember(draft.team),
+    team: ensureTeamOrder(draft.team),
   };
 
   const nextPublished = {
     ...published,
-    team: addMember(published.team),
+    team: ensureTeamOrder(published.team),
   };
 
   if (JSON.stringify(nextDraft) === JSON.stringify(draft) && JSON.stringify(nextPublished) === JSON.stringify(published)) {

@@ -391,16 +391,6 @@ export const defaultSiteContent: SiteContent = {
       linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
     },
     {
-      name: "Ovesh",
-      role: "Content Admin",
-      initials: "OV",
-      skills: ["Audio Video Editing", "Graphic Designing", "Content Strategy"],
-      bio:
-        "Shapes content operations, sharpens visual output, and keeps media delivery organized across campaigns.",
-      portfolioUrl: "https://lakshyaps.netlify.app/",
-      linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
-    },
-    {
       name: "Sainee Kumar",
       role: "Data Analyst",
       initials: "SK",
@@ -409,6 +399,16 @@ export const defaultSiteContent: SiteContent = {
         "Turns raw data into clear stories, actionable dashboards, and decisions that are easy for teams to trust.",
       portfolioUrl: "#contact",
       linkedinUrl: "#contact",
+    },
+    {
+      name: "Ovesh",
+      role: "Content Admin",
+      initials: "OV",
+      skills: ["Audio Video Editing", "Graphic Designing", "Content Strategy"],
+      bio:
+        "Shapes content operations, sharpens visual output, and keeps media delivery organized across campaigns.",
+      portfolioUrl: "https://lakshyaps.netlify.app/",
+      linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
     },
   ],
   reviewsSection: {

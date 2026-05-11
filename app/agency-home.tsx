@@ -1117,7 +1117,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                 </div>
               </div>
               <div className="marquee project-marquee">
-                <div className="marquee-track pr-6 sm:pr-8 lg:pr-10">
+                <div className="marquee-track pl-6 sm:pl-8 lg:pl-10">
                   {[...clientNames, ...clientNames].map((name, index) => (
                     <div
                       key={`${name}-logo-${index}`}
@@ -1196,7 +1196,7 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
             </p>
           </div>
 
-          <div ref={teamPopupRef} className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div ref={teamPopupRef} className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2 lg:grid-cols-4">
             {team.map((member) => (
               <article key={member.name} className={`flip-card rounded-[1.6rem] ${activeTeamCard === member.name ? "is-flipped" : ""}`}>
                 <div className="flip-inner relative h-full min-h-[18rem]">

@@ -257,7 +257,7 @@ function SimpleListEditor({
         {items.map((item, index) => (
           <div
             key={`${label}-${index}`}
-            className={`grid gap-3 rounded-[1.35rem] surface-panel p-4 transition-colors md:grid-cols-[auto_minmax(0,1fr)_auto] ${
+            className={`rounded-[1.35rem] surface-panel p-4 transition-colors ${
               dragIndex === index ? "ring-1 ring-[color-mix(in_srgb,var(--accent)_60%,transparent)]" : ""
             }`}
             onDragOver={(event) => event.preventDefault()}
@@ -271,42 +271,46 @@ function SimpleListEditor({
               setDragIndex(null);
             }}
           >
-            <button
-              type="button"
-              draggable
-              onDragStart={() => setDragIndex(index)}
-              onDragEnd={() => setDragIndex(null)}
-              aria-label={`Drag ${label} item`}
-              className="cursor-grab rounded-full border border-white/10 px-3 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] active:cursor-grabbing"
-            >
-              Drag
-            </button>
-            <input
-              className="field"
-              value={item}
-              placeholder={placeholder}
-              onChange={(event) => {
-                const next = items.slice();
-                next[index] = event.target.value;
-                onChange(next);
-              }}
-            />
-            <button
-              type="button"
-              onClick={() =>
-                onChange([...items.slice(0, index + 1), `${item} copy`, ...items.slice(index + 1)])
-              }
-              className="rounded-full border border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
-            >
-              Copy
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}
-              className="rounded-full border border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
-            >
-              Delete
-            </button>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <button
+                type="button"
+                draggable
+                onDragStart={() => setDragIndex(index)}
+                onDragEnd={() => setDragIndex(null)}
+                aria-label={`Drag ${label} item`}
+                className="cursor-grab rounded-full border border-white/10 px-3 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] active:cursor-grabbing lg:shrink-0"
+              >
+                Drag
+              </button>
+              <input
+                className="field min-w-0 flex-1"
+                value={item}
+                placeholder={placeholder}
+                onChange={(event) => {
+                  const next = items.slice();
+                  next[index] = event.target.value;
+                  onChange(next);
+                }}
+              />
+              <div className="flex flex-wrap gap-2 lg:shrink-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onChange([...items.slice(0, index + 1), `${item} copy`, ...items.slice(index + 1)])
+                  }
+                  className="rounded-full border border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
+                >
+                  Copy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}
+                  className="rounded-full border border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         ))}
 
@@ -1137,7 +1141,7 @@ export default function AdminStudio({
                 {draft.stats.map((stat, index) => (
                   <div
                     key={`${stat.label}-${index}`}
-                    className={`grid gap-3 rounded-[1.35rem] surface-panel p-4 md:grid-cols-[auto_minmax(0,1fr)_8rem_10rem_auto] ${
+                    className={`rounded-[1.35rem] surface-panel p-4 ${
                       dragCollection === "stats" && dragIndex === index
                         ? "ring-1 ring-[color-mix(in_srgb,var(--accent)_60%,transparent)]"
                         : ""
@@ -1158,82 +1162,93 @@ export default function AdminStudio({
                       setDragIndex(null);
                     }}
                   >
-                    <button
-                      type="button"
-                      draggable
-                      onDragStart={() => {
-                        setDragCollection("stats");
-                        setDragIndex(index);
-                      }}
-                      onDragEnd={() => {
-                        setDragCollection(null);
-                        setDragIndex(null);
-                      }}
-                      aria-label={`Drag ${stat.label}`}
-                      className="cursor-grab rounded-full border border-white/10 px-3 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] active:cursor-grabbing"
-                    >
-                      Drag
-                    </button>
-                    <input
-                      className="field"
-                      type="number"
-                      value={stat.target}
-                      onChange={(event) =>
-                        updateStat(index, (current) => ({
-                          ...current,
-                          target: Number(event.target.value) || 0,
-                        }))
-                      }
-                    />
-                    <input
-                      className="field"
-                      value={stat.suffix}
-                      onChange={(event) =>
-                        updateStat(index, (current) => ({
-                          ...current,
-                          suffix: event.target.value,
-                        }))
-                      }
-                    />
-                    <input
-                      className="field"
-                      value={stat.label}
-                      onChange={(event) =>
-                        updateStat(index, (current) => ({
-                          ...current,
-                          label: event.target.value,
-                        }))
-                      }
-                    />
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraft((current) => ({
-                            ...current,
-                            stats: [...current.stats.slice(0, index + 1), duplicateStatItem(stat), ...current.stats.slice(index + 1)],
-                          }))
-                        }
-                        className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
-                      >
-                        Copy
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const label = stat.label || "stat";
-                          if (!confirmDelete(label)) {
-                            return;
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                        <button
+                          type="button"
+                          draggable
+                          onDragStart={() => {
+                            setDragCollection("stats");
+                            setDragIndex(index);
+                          }}
+                          onDragEnd={() => {
+                            setDragCollection(null);
+                            setDragIndex(null);
+                          }}
+                          aria-label={`Drag ${stat.label}`}
+                          className="cursor-grab rounded-full border border-white/10 px-3 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] active:cursor-grabbing lg:shrink-0"
+                        >
+                          Drag
+                        </button>
+                        <input
+                          className="field min-w-0 flex-1"
+                          type="number"
+                          value={stat.target}
+                          onChange={(event) =>
+                            updateStat(index, (current) => ({
+                              ...current,
+                              target: Number(event.target.value) || 0,
+                            }))
                           }
-                          setDraft((current) => ({
-                            ...current,
-                            stats: current.stats.filter((_, statIndex) => statIndex !== index),
-                          }));
-                        }}
-                        className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
-                      >
-                        Delete
-                      </button>
+                        />
+                        <input
+                          className="field min-w-0 flex-1"
+                          value={stat.label}
+                          onChange={(event) =>
+                            updateStat(index, (current) => ({
+                              ...current,
+                              label: event.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                        <input
+                          className="field min-w-0 flex-1"
+                          value={stat.suffix}
+                          onChange={(event) =>
+                            updateStat(index, (current) => ({
+                              ...current,
+                              suffix: event.target.value,
+                            }))
+                          }
+                        />
+                        <div className="flex flex-wrap gap-2 lg:shrink-0">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDraft((current) => ({
+                                ...current,
+                                stats: [
+                                  ...current.stats.slice(0, index + 1),
+                                  duplicateStatItem(stat),
+                                  ...current.stats.slice(index + 1),
+                                ],
+                              }))
+                            }
+                            className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
+                          >
+                            Copy
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const label = stat.label || "stat";
+                              if (!confirmDelete(label)) {
+                                return;
+                              }
+                              setDraft((current) => ({
+                                ...current,
+                                stats: current.stats.filter((_, statIndex) => statIndex !== index),
+                              }));
+                            }}
+                            className="rounded-full border border-white/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-soft)] transition-colors hover:bg-white/5"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
