@@ -381,34 +381,24 @@ export const defaultSiteContent: SiteContent = {
       linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
     },
     {
-      name: "Honey Jain",
+      name: "Sharukh Pathan",
       role: "Full Stack Developer",
+      initials: "SP",
+      skills: ["MERN Stack", "Next.js", "Configurations", "Testing"],
+      bio:
+        "Delivers robust app experiences, clean integrations, and reliable front-to-back implementation.",
+      portfolioUrl: "#contact",
+      linkedinUrl: "https://www.linkedin.com/in/pathansharukh/",
+    },
+    {
+      name: "Honey Jain",
+      role: "UI/UX Designer",
       initials: "HJ",
       skills: ["MERN Stack", "Next.js", "Configurations", "Testing"],
       bio:
         "Delivers robust app experiences, clean integrations, and reliable front-to-back implementation.",
-      portfolioUrl: "https://lakshyaps.netlify.app/",
-      linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
-    },
-    {
-      name: "Sainee Kumar",
-      role: "Data Analyst",
-      initials: "SK",
-      skills: ["Data Visualisation", "Data Cleaning", "Business Analysis"],
-      bio:
-        "Turns raw data into clear stories, actionable dashboards, and decisions that are easy for teams to trust.",
-      portfolioUrl: "#contact",
+      portfolioUrl: "https://workstation-showcase.vercel.app",
       linkedinUrl: "#contact",
-    },
-    {
-      name: "Ovesh",
-      role: "Content Admin",
-      initials: "OV",
-      skills: ["Audio Video Editing", "Graphic Designing", "Content Strategy"],
-      bio:
-        "Shapes content operations, sharpens visual output, and keeps media delivery organized across campaigns.",
-      portfolioUrl: "https://lakshyaps.netlify.app/",
-      linkedinUrl: "https://www.linkedin.com/in/lakshyasehgal/",
     },
   ],
   reviewsSection: {

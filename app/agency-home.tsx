@@ -88,6 +88,10 @@ function LinkedinIcon({ className }: { className?: string }) {
   );
 }
 
+function hasPortfolio(url?: string) {
+  return Boolean(url) && !url!.startsWith("#");
+}
+
 const mobileDockItems = [
   { label: "Home", href: "#home", icon: "home" as const },
   { label: "Services", href: "#services", icon: "services" as const },
@@ -1237,14 +1241,44 @@ export default function AgencyHome({ initialContent }: AgencyHomeProps) {
                       </div>
 
                       <div className="mt-auto flex items-center justify-start gap-3 pt-4">
-                        <a
-                          href="https://lakshyaps.netlify.app/"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-4 py-2.5 text-sm font-semibold text-white"
-                        >
-                          View Portfolio →
-                        </a>
+                        {hasPortfolio(member.linkedinUrl) ? (
+                          <a
+                            href={member.linkedinUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(53,227,177,0.16),rgba(143,131,255,0.12))] text-[var(--text)] transition-transform hover:-translate-y-0.5"
+                            aria-label={`${member.name} LinkedIn`}
+                          >
+                            <LinkedinIcon className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span
+                            className="inline-flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-white/10 bg-white/5 text-[var(--text-soft)] opacity-40"
+                            aria-label={`${member.name} LinkedIn unavailable`}
+                            aria-disabled="true"
+                          >
+                            <LinkedinIcon className="h-4 w-4" />
+                          </span>
+                        )}
+                        {hasPortfolio(member.portfolioUrl) ? (
+                          <a
+                            href={member.portfolioUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(108,99,255,0.16),rgba(0,212,170,0.12))] text-[var(--text)] transition-transform hover:-translate-y-0.5"
+                            aria-label={`${member.name} portfolio`}
+                          >
+                            <ExternalLinkIcon className="h-4 w-4" />
+                          </a>
+                        ) : (
+                          <span
+                            className="inline-flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-white/10 bg-white/5 text-[var(--text-soft)] opacity-40"
+                            aria-label={`${member.name} portfolio unavailable`}
+                            aria-disabled="true"
+                          >
+                            <ExternalLinkIcon className="h-4 w-4" />
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
