@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const apiKey = process.env.GROQ_API_KEY;
-    const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+    const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
     const baseUrl = process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1";
     const temperature = Number(process.env.GROQ_TEMPERATURE || "0.7");
     const maxTokens = Number(process.env.GROQ_MAX_TOKENS || "1024");
@@ -50,8 +50,9 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const text = await response.text();
+      console.error(`Groq request failed (${response.status}): ${text}`);
       return NextResponse.json(
-        { error: `Studio AI request failed: ${text}` },
+        { error: "Studio AI could not respond right now. Please try again shortly." },
         { status: response.status },
       );
     }

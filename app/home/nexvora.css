@@ -1,0 +1,427 @@
+/*
+ * Nexvora homepage: "Violet & Oat". Warm oat surfaces, near-black ink, one violet
+ * accent with a mint highlight (the brand mark's two colours). A violet wash opens
+ * and closes the page; everything between sits on oat. Display type is Inter Tight.
+ *
+ * Scoped to .nx so the admin studio (which uses the global dark tokens) is untouched.
+ * The theme lives on <html data-nx-theme>, set before paint by the page's boot script.
+ */
+/* Page chrome outside .nx follows the homepage theme too. */
+:root[data-nx-theme="light"] body { background: #f6f2ea; }
+:root[data-nx-theme="dark"] body { background: #0e0d14; }
+:root[data-nx-theme] {
+  --scrollbar-thumb: #5b3df5;
+  --accent-2: #2dd4bf;
+  --scrollbar-track: rgba(91, 61, 245, 0.08);
+}
+:root[data-nx-theme="light"] { color-scheme: light; }
+:root[data-nx-theme="dark"] { color-scheme: dark; }
+
+.nx ::selection { background: color-mix(in srgb, #5b3df5 24%, transparent); color: inherit; }
+
+@layer components {
+.nx {
+  --nx-bg: #f6f2ea;
+  --nx-bg-deep: #efe9de;
+  --nx-card: #ffffff;
+  --nx-line: #e4ddd1;
+  --nx-line-strong: #d6cdbd;
+  --nx-ink: #16151c;
+  --nx-muted: #5b5866;
+  --nx-subtle: #716c7c;
+  --nx-violet: #5b3df5;
+  --nx-violet-soft: #ece8fe;
+  --nx-mint: #0d8c7a;
+  --nx-mint-bright: #7ef7df;
+  --nx-on-violet: #ffffff;
+  --nx-glow: rgba(91, 61, 245, 0.28);
+  --nx-shadow: 0 1px 2px rgba(40, 32, 20, 0.05), 0 1px 3px rgba(40, 32, 20, 0.06);
+  --nx-shadow-lift: 0 2px 4px rgba(40, 32, 20, 0.05), 0 18px 40px -14px rgba(40, 32, 20, 0.2);
+  --u: min(1vw, 19.2px);
+
+  background: var(--nx-bg);
+  color: var(--nx-ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  text-rendering: optimizeLegibility;
+}
+:root[data-nx-theme="dark"] .nx {
+  --nx-bg: #0e0d14;
+  --nx-bg-deep: #13121b;
+  --nx-card: #17161f;
+  --nx-line: #2a2835;
+  --nx-line-strong: #3a3747;
+  --nx-ink: #f1eff7;
+  --nx-muted: #a9a5b8;
+  --nx-subtle: #8a859b;
+  --nx-violet: #a495ff;
+  --nx-violet-soft: #221d45;
+  --nx-mint: #5eead4;
+  --nx-on-violet: #0e0d14;
+  --nx-glow: rgba(164, 149, 255, 0.22);
+  --nx-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --nx-shadow-lift: 0 18px 44px -16px rgba(0, 0, 0, 0.7);
+}
+
+/* ── Type ─────────────────────────────────────────────────────────────── */
+.nx-display {
+  font-family: var(--font-inter-tight), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  text-wrap: balance;
+  font-feature-settings: "ss01", "cv11";
+}
+.nx-kicker {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--nx-violet);
+}
+.nx-lead { color: var(--nx-muted); line-height: 1.65; text-wrap: pretty; }
+.nx-h2 { font-size: clamp(2rem, 4.4vw, 3.4rem); }
+
+.nx-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) { .nx-container { padding-inline: 2rem; } }
+@media (min-width: 1024px) { .nx-container { width: calc(var(--u) * 86); padding-inline: 0; } }
+
+.nx-section { padding-block: clamp(4.5rem, 9vw, 8rem); scroll-margin-top: 4rem; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.nx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 46px;
+  padding: 0 1.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 150ms ease-out, color 150ms ease-out, border-color 150ms ease-out, transform 150ms ease-out, box-shadow 150ms ease-out;
+}
+.nx-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+.nx-btn-ink { background: var(--nx-ink); color: var(--nx-bg); }
+.nx-btn-ink:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(22, 21, 28, 0.45); }
+.nx-btn-violet { background: var(--nx-violet); color: var(--nx-on-violet); }
+.nx-btn-violet:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 12px 26px -10px var(--nx-glow); }
+.nx-btn-ghost { border: 1px solid color-mix(in srgb, var(--nx-ink) 22%, transparent); color: var(--nx-ink); }
+.nx-btn-ghost:hover { background: color-mix(in srgb, var(--nx-ink) 6%, transparent); }
+.nx-btn-white { background: #ffffff; color: #16151c; }
+.nx-btn-white:hover { transform: translateY(-1px); box-shadow: 0 12px 30px -12px rgba(20, 12, 70, 0.55); }
+.nx-btn-glass { background: rgba(255, 255, 255, 0.14); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); }
+.nx-btn-glass:hover { background: rgba(255, 255, 255, 0.24); }
+.nx-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--nx-line);
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+.nx-icon-btn:hover { border-color: color-mix(in srgb, var(--nx-violet) 45%, var(--nx-line)); color: var(--nx-violet); }
+
+.nx :focus-visible {
+  outline: 2px solid var(--nx-violet);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.nx-btn:focus-visible, .nx-icon-btn:focus-visible { border-radius: 999px; }
+
+/* ── Surfaces ─────────────────────────────────────────────────────────── */
+.nx-card {
+  background: var(--nx-card);
+  border: 1px solid var(--nx-line);
+  border-radius: 20px;
+  box-shadow: var(--nx-shadow);
+}
+.nx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  border: 1px solid var(--nx-line);
+  background: var(--nx-bg);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--nx-muted);
+}
+.nx-band {
+  background: linear-gradient(to bottom, var(--nx-bg) 0%, var(--nx-bg-deep) 14%, var(--nx-bg-deep) 86%, var(--nx-bg) 100%);
+}
+
+/* Spotlight that follows the pointer across a card (set --mx / --my from JS). */
+.nx-spot { position: relative; isolation: isolate; }
+.nx-spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--nx-violet) 10%, transparent), transparent 60%);
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+.nx-spot:hover::before { opacity: 1; }
+
+/* ── Fields ───────────────────────────────────────────────────────────── */
+.nx-field {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--nx-line-strong);
+  background: var(--nx-card);
+  padding: 0 14px;
+  font-size: 15px;
+  color: var(--nx-ink);
+  transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+textarea.nx-field { padding-block: 12px; line-height: 1.55; }
+.nx-field::placeholder { color: color-mix(in srgb, var(--nx-muted) 75%, transparent); }
+.nx-field:hover { border-color: color-mix(in srgb, var(--nx-violet) 35%, var(--nx-line-strong)); }
+.nx-field:focus-visible {
+  outline: none;
+  border-color: var(--nx-violet);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--nx-violet) 16%, transparent);
+}
+.nx-field[type="file"] { padding: 9px 10px; font-size: 14px; color: var(--nx-muted); }
+.nx-field[type="file"]::file-selector-button {
+  margin-right: 12px;
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 14px;
+  background: var(--nx-violet-soft);
+  color: var(--nx-violet);
+  font-weight: 600;
+  cursor: pointer;
+}
+select.nx-field {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--nx-muted) 50%), linear-gradient(135deg, var(--nx-muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 40px;
+}
+.nx-label { display: block; margin-bottom: 0.45rem; font-size: 0.875rem; font-weight: 500; color: var(--nx-ink); }
+
+/* Status messages */
+.nx-success { background: rgba(16, 185, 129, 0.12); color: #047857; }
+.nx-error { background: rgba(225, 29, 72, 0.1); color: #be123c; }
+:root[data-nx-theme="dark"] .nx-success { color: #6ee7b7; }
+:root[data-nx-theme="dark"] .nx-error { color: #fda4af; }
+
+/* ── Washes ───────────────────────────────────────────────────────────── */
+.nx-wash-top {
+  background:
+    radial-gradient(80% 55% at 12% 0%, rgba(62, 32, 214, 0.5), transparent 65%),
+    radial-gradient(60% 45% at 92% 8%, rgba(45, 212, 191, 0.32), transparent 70%),
+    linear-gradient(to bottom, #4a2fe0 0%, #6b52f2 20%, #a393f7 40%, #d9d1fb 64%, var(--nx-bg) 100%);
+}
+:root[data-nx-theme="dark"] .nx-wash-top {
+  background:
+    radial-gradient(80% 55% at 12% 0%, rgba(99, 70, 250, 0.4), transparent 65%),
+    radial-gradient(60% 45% at 92% 8%, rgba(45, 212, 191, 0.16), transparent 70%),
+    linear-gradient(to bottom, #2a1f7a 0%, #211960 28%, #16122f 62%, var(--nx-bg) 100%);
+}
+.nx-wash-bottom {
+  background:
+    linear-gradient(to bottom, transparent 82%, #4a2fe0 100%),
+    radial-gradient(70% 50% at 88% 100%, rgba(45, 212, 191, 0.28), transparent 70%),
+    radial-gradient(80% 55% at 10% 100%, rgba(62, 32, 214, 0.45), transparent 65%),
+    linear-gradient(to bottom, var(--nx-bg) 0%, #d9d1fb 30%, #a393f7 56%, #6b52f2 78%, #4a2fe0 100%);
+}
+:root[data-nx-theme="dark"] .nx-wash-bottom {
+  background:
+    linear-gradient(to bottom, transparent 82%, #2a1f7a 100%),
+    radial-gradient(80% 55% at 10% 100%, rgba(99, 70, 250, 0.35), transparent 65%),
+    linear-gradient(to bottom, var(--nx-bg) 0%, #16122f 36%, #211960 70%, #2a1f7a 100%);
+}
+.nx-footer {
+  background:
+    radial-gradient(60% 45% at 100% 100%, rgba(45, 212, 191, 0.16), transparent 70%),
+    linear-gradient(to bottom, #4a2fe0 0%, #3a24b8 40%, #1f1570 100%);
+  color: #ffffff;
+}
+:root[data-nx-theme="dark"] .nx-footer { background: linear-gradient(to bottom, #2a1f7a 0%, #1a1450 45%, #0e0d14 100%); }
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+.nx-hero-title { font-size: clamp(2.8rem, 11.5vw, 4.4rem); line-height: 1.02; }
+.nx-hero-lead { font-size: 1.125rem; line-height: 1.6; max-width: 40rem; }
+@media (min-width: 1024px) {
+  .nx-hero-title { width: 80vw; font-size: 7.1vw; }
+  .nx-hero-lead { width: 80vw; max-width: none; font-size: clamp(1.125rem, 1.4vw, 1.55rem); }
+}
+.nx-accent-on-wash { color: var(--nx-mint-bright); }
+
+/* ── Devices (measured screen holes of the PNG art) ───────────────────── */
+.nx-device { position: relative; isolation: isolate; }
+.nx-device > img { position: relative; z-index: 10; display: block; width: 100%; height: auto; user-select: none; pointer-events: none; }
+.nx-glass { position: absolute; z-index: 0; overflow: hidden; background: var(--nx-bg); }
+.nx-glass-mac { top: 12.6%; left: 12.24%; right: 12.17%; bottom: 15.63%; border-radius: 1.47% / 2.32%; contain: layout paint; }
+.nx-glass-phone { top: 3.12%; left: 8.33%; right: 8.56%; bottom: 3.56%; border-radius: 14.07% / 6.11%; contain: layout paint; }
+.nx-device-shadow {
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+  left: 6%;
+  right: 6%;
+  bottom: -5%;
+  height: 16%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(20, 18, 40, 0.34), rgba(20, 18, 40, 0.12) 45%, transparent 72%);
+}
+:root[data-nx-theme="dark"] .nx-device-shadow { background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.2) 45%, transparent 72%); }
+
+/* Aurora behind the devices: violet, lavender and mint pools, a slowly turning halo. */
+.nx-aurora {
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 50% 56% at 30% 42%, rgba(98, 70, 246, 0.6), transparent 72%),
+    radial-gradient(ellipse 44% 50% at 72% 30%, rgba(196, 161, 255, 0.5), transparent 72%),
+    radial-gradient(ellipse 40% 44% at 70% 78%, rgba(94, 234, 212, 0.45), transparent 72%);
+  contain: strict;
+  -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 55%, transparent 100%);
+}
+.nx-aurora::before {
+  content: "";
+  position: absolute;
+  inset: 22% 26%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(165, 150, 246, 0.55) 70deg, transparent 150deg, rgba(126, 247, 223, 0.45) 220deg, transparent 290deg, rgba(92, 61, 245, 0.45) 340deg, transparent 360deg);
+  filter: blur(40px);
+  will-change: transform;
+  animation: nx-halo 28s linear infinite;
+}
+:root[data-nx-theme="dark"] .nx-aurora {
+  background:
+    radial-gradient(ellipse 50% 56% at 30% 42%, rgba(99, 70, 250, 0.5), transparent 72%),
+    radial-gradient(ellipse 44% 50% at 72% 30%, rgba(168, 85, 247, 0.34), transparent 72%),
+    radial-gradient(ellipse 40% 44% at 70% 78%, rgba(45, 212, 191, 0.26), transparent 72%);
+}
+@keyframes nx-halo { to { transform: rotate(360deg); } }
+
+.nx-float { animation: nx-float 6s ease-in-out infinite; }
+.nx-float-delayed { animation: nx-float 6s ease-in-out 1.5s infinite; }
+@keyframes nx-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* ── Marquee ──────────────────────────────────────────────────────────── */
+.nx-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+}
+.nx-marquee-track { display: flex; width: max-content; animation: nx-marquee 40s linear infinite; }
+.nx-marquee:hover .nx-marquee-track { animation-play-state: paused; }
+@keyframes nx-marquee { to { transform: translateX(-50%); } }
+
+/* ── Reveal on scroll ─────────────────────────────────────────────────── */
+.nx-reveal { opacity: 0; transform: translateY(18px); transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1), transform 600ms cubic-bezier(0.22, 1, 0.36, 1); transition-delay: var(--d, 0ms); }
+.nx-reveal.is-in { opacity: 1; transform: none; }
+
+/* ── In-screen motion (dashboard, phone chat) ─────────────────────────── */
+.nx-rise { animation: nx-rise 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes nx-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.nx-typing-dot { animation: nx-typing 1s ease-in-out infinite; }
+@keyframes nx-typing { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
+.nx-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: nx-draw 1.8s cubic-bezier(0.22, 1, 0.36, 1) 300ms forwards; }
+@keyframes nx-draw { to { stroke-dashoffset: 0; } }
+.nx-fade-in { opacity: 0; animation: nx-fade 900ms ease-out 1.2s forwards; }
+@keyframes nx-fade { to { opacity: 1; } }
+.nx-pulse { animation: nx-pulse 2.2s ease-out infinite; }
+@keyframes nx-pulse { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); } 70%, 100% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } }
+
+/* ── Process timeline ─────────────────────────────────────────────────── */
+.nx-step { transition: border-color 250ms ease-out, background-color 250ms ease-out, opacity 250ms ease-out, transform 250ms ease-out; }
+.nx-step[data-active="false"] { opacity: 0.55; }
+.nx-step[data-active="true"] { border-color: color-mix(in srgb, var(--nx-violet) 45%, var(--nx-line)); box-shadow: var(--nx-shadow-lift); }
+
+/* ── Dialogs ──────────────────────────────────────────────────────────── */
+.nx-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(22, 21, 28, 0.45); backdrop-filter: blur(3px); animation: nx-fade 180ms ease-out forwards; opacity: 0; }
+:root[data-nx-theme="dark"] .nx-overlay { background: rgba(0, 0, 0, 0.62); }
+.nx-dialog {
+  position: fixed;
+  z-index: 81;
+  inset-inline: 0;
+  bottom: 0;
+  max-height: calc(100dvh - 2.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  border: 1px solid var(--nx-line);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 30px 80px -20px rgba(22, 21, 28, 0.45);
+  animation: nx-sheet 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes nx-sheet { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (min-width: 640px) {
+  .nx-dialog {
+    inset-inline: auto;
+    left: 50%;
+    top: 50%;
+    bottom: auto;
+    width: calc(100% - 3rem);
+    max-height: calc(100dvh - 4rem);
+    border-radius: 24px;
+    transform: translate(-50%, -50%);
+    animation: nx-pop 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes nx-pop { from { transform: translate(-50%, -48%) scale(0.98); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+}
+
+/* ── Assistant dock ───────────────────────────────────────────────────── */
+.nx-dock {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--nx-card);
+  color: var(--nx-ink);
+  animation: nx-sheet 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (min-width: 768px) {
+  .nx-dock {
+    inset: auto 1.25rem 1.25rem auto;
+    width: min(25rem, calc(100vw - 2.5rem));
+    height: min(38rem, calc(100dvh - 7rem));
+    border: 1px solid var(--nx-line);
+    border-radius: 24px;
+    box-shadow: 0 30px 80px -24px rgba(40, 24, 120, 0.45);
+    overflow: hidden;
+  }
+}
+.nx-bubble-user { background: var(--nx-violet); color: var(--nx-on-violet); border-radius: 18px 18px 6px 18px; }
+.nx-bubble-bot { background: var(--nx-bg); border: 1px solid var(--nx-line); color: var(--nx-ink); border-radius: 18px 18px 18px 6px; }
+
+/* ── Mobile bottom dock ───────────────────────────────────────────────── */
+.nx-tabbar {
+  background: color-mix(in srgb, var(--nx-bg) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border-top: 1px solid var(--nx-line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx *, .nx *::before, .nx *::after { animation: none !important; transition: none !important; }
+  .nx .nx-reveal { opacity: 1; transform: none; }
+  .nx .nx-draw { stroke-dashoffset: 0; }
+  .nx .nx-fade-in { opacity: 1; }
+}
+
+}

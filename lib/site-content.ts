@@ -77,12 +77,34 @@ export type SiteContent = {
   hero: {
     eyebrow: string;
     title: string;
+    titleAccent: string;
     description: string;
     primaryCta: string;
     secondaryCta: string;
     badge: string;
     engineLabel: string;
     scrollHint: string;
+    highlights: string[];
+    trustLabel: string;
+    dashboard: {
+      projectName: string;
+      panelTitle: string;
+      panelSubtitle: string;
+      progressLabel: string;
+      progressValue: number;
+      teamLabel: string;
+      teamCount: number;
+      timelineLabel: string;
+      timelineStatus: string;
+      chartValues: number[];
+      chartMonths: string[];
+      activityLabel: string;
+      activity: { label: string; time: string }[];
+      uptimeValue: string;
+      uptimeLabel: string;
+      badgeTitle: string;
+      badgeSubtitle: string;
+    };
   };
   stats: StatItem[];
   servicesSection: {
@@ -177,7 +199,8 @@ export const defaultSiteContent: SiteContent = {
   ],
   hero: {
     eyebrow: "Premium digital agency for design, development, AI, and cloud",
-    title: "We Build Digital Products That Scale",
+    title: "We Build Digital",
+    titleAccent: "Products That Scale",
     description:
       "Design. Development. AI. Cloud. All under one roof, with the clarity of a product team and the polish of a luxury studio.",
     primaryCta: "Get a Free Quote",
@@ -185,6 +208,32 @@ export const defaultSiteContent: SiteContent = {
     badge: "Nexvora Engine",
     engineLabel: "Percent",
     scrollHint: "Discover the full experience below",
+    highlights: ["Modern Tech Stack", "Scalable Architecture", "AI-Powered Solutions", "Cloud Native"],
+    trustLabel: "Trusted by teams like yours",
+    dashboard: {
+      projectName: "Project Nexvora",
+      panelTitle: "Product Development",
+      panelSubtitle: "Building the next generation",
+      progressLabel: "Progress",
+      progressValue: 72,
+      teamLabel: "Team",
+      teamCount: 12,
+      timelineLabel: "Timeline",
+      timelineStatus: "On Track",
+      chartValues: [30, 45, 38, 60, 72, 90],
+      chartMonths: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+      activityLabel: "Recent Activity",
+      activity: [
+        { label: "UI/UX designs approved", time: "2h ago" },
+        { label: "API integration completed", time: "5h ago" },
+        { label: "Sprint review meeting", time: "1d ago" },
+        { label: "Deployment to staging", time: "1d ago" },
+      ],
+      uptimeValue: "99.9%",
+      uptimeLabel: "Uptime",
+      badgeTitle: "AI-Powered Workflows",
+      badgeSubtitle: "Smarter. Faster. Better.",
+    },
   },
   stats: [
     { target: 50, suffix: "+", label: "Projects" },
@@ -301,29 +350,38 @@ export const defaultSiteContent: SiteContent = {
   ],
   showcaseSection: {
     kicker: "Work",
-    title: "Client logos and projects, moving in a smooth continuous loop.",
+    title: "Products we’ve designed, built and shipped.",
     lead:
-      "This space is ideal for deep case studies, measurable results, and outcome-driven portfolio stories.",
+      "From pharma CRMs to edtech platforms to cloud migration tooling, here is a look at the products we have shipped.",
     note:
-      "Add 3 to 5 deep-dive case studies here to match top-tier agency expectations. This build is ready for them.",
+      "A running list of client work, updated as new projects launch.",
   },
   clientNames: [
-    "TechNova",
-    "Finspire",
-    "Cloudex",
-    "RoamApp",
-    "Medisync",
-    "Buildify",
-    "Launchly",
-    "ZestPay",
+    "Aconic Technologies",
+    "Kanthast",
+    "Soul Pharma",
+    "Learning Tree",
+    "JD Group",
+    "Cloud Duty",
+    "EV Connect",
+    "Vastra Villa",
+    "Broomin",
+    "JY RAM Auto",
+    "Buzzroster",
   ],
   projectNames: [
-    "Project Orion",
-    "Dashboard X",
-    "Shopify Migration",
-    "AI Chatbot Suite",
-    "Mobile Rebrand 2024",
-    "Cloud Ops Revamp",
+    "EVConnect PWA",
+    "Cloud Migration Tools — Aconic",
+    "Kanthast Edtech Platform",
+    "Pharma CRM — Soul Pharma",
+    "Coaching Centre Digital Marketing & Web Design — Learning Tree",
+    "Agri Export Web & SEO — JD Group",
+    "Digital Transformation — JY RAM Auto",
+    "Social Media Platform — Cloud Duty",
+    "US Hiring App — Cloud Duty",
+    "Social Media Influencer Management — Buzzroster",
+    "Ecommerce Web App — Vastra Villa",
+    "Digital Transformation — Broomin",
   ],
   processSection: {
     kicker: "Process",
@@ -367,7 +425,7 @@ export const defaultSiteContent: SiteContent = {
     kicker: "Team",
     title: "Small team energy, senior-level execution.",
     lead:
-      "These cards are ready for photos, LinkedIn links, and external portfolio URLs once your team assets are in place.",
+      "The people who scope, design and ship your product. You work with us directly, from the first call to launch day.",
   },
   team: [
     {
@@ -411,33 +469,113 @@ export const defaultSiteContent: SiteContent = {
   reviews: [
     {
       id: 1,
-      name: "Priya N.",
-      company: "Finspire",
-      date: "May 2026",
+      name: "Jatin",
+      company: "Soul Pharma",
+      date: "March 2026",
       rating: 5,
       text:
-        "The team understood our product immediately. The design feels premium, and the launch process was very organized.",
-      initials: "PN",
+        "Our pharma CRM needed to handle compliance-heavy workflows without slowing our field team down. The build was precise, and support after launch has been just as sharp.",
+      initials: "J",
     },
     {
       id: 2,
-      name: "Daniel K.",
-      company: "Cloudex",
-      date: "April 2026",
+      name: "Deepti",
+      company: "Learning Tree",
+      date: "February 2026",
       rating: 5,
       text:
-        "They cleaned up a messy experience into a clear product story. Our internal team now has a much easier time selling it.",
-      initials: "DK",
+        "They rebuilt our coaching centre's web presence and ran our digital marketing in the same breath. Enquiries picked up within weeks of launch.",
+      initials: "D",
     },
     {
       id: 3,
-      name: "Maya R.",
-      company: "RoamApp",
-      date: "April 2026",
+      name: "Amit",
+      company: "Aconic Technologies",
+      date: "January 2026",
       rating: 5,
       text:
-        "Sharp communication, thoughtful work, and genuinely fast delivery. They felt like an extension of our own team.",
-      initials: "MR",
+        "The cloud migration tooling they built saved our team hours of manual work every week. Clear communication through a fairly technical project.",
+      initials: "A",
+    },
+    {
+      id: 4,
+      name: "Anup",
+      company: "Vastra Villa",
+      date: "December 2025",
+      rating: 5,
+      text:
+        "Our ecommerce build came out fast, clean, and easy for our own team to manage. Exactly what we needed to start selling online properly.",
+      initials: "A",
+    },
+    {
+      id: 5,
+      name: "Amit",
+      company: "EV Connect",
+      date: "November 2025",
+      rating: 5,
+      text:
+        "The EVConnect PWA works smoothly across devices and feels like a native app without the App Store overhead. Great technical judgment throughout.",
+      initials: "A",
+    },
+    {
+      id: 6,
+      name: "Harish",
+      company: "JY RAM Auto",
+      date: "November 2025",
+      rating: 5,
+      text:
+        "They guided our full digital transformation, not just a website. Patient with our team while we adjusted to new systems.",
+      initials: "H",
+    },
+    {
+      id: 7,
+      name: "Kunal",
+      company: "Kanthast",
+      date: "October 2025",
+      rating: 5,
+      text:
+        "Our edtech platform needed to work for both instructors and students without friction. They nailed the balance and kept iterating after launch.",
+      initials: "K",
+    },
+    {
+      id: 8,
+      name: "Jayesh",
+      company: "Broomin",
+      date: "October 2025",
+      rating: 5,
+      text:
+        "Solid digital transformation work end to end. They took time to understand how we actually operate before proposing changes.",
+      initials: "J",
+    },
+    {
+      id: 9,
+      name: "Pankaj Michael",
+      company: "Cloud Duty",
+      date: "September 2025",
+      rating: 5,
+      text:
+        "Two very different builds for us — a social platform and a US hiring app — and both were handled with the same level of care and speed.",
+      initials: "PM",
+    },
+    {
+      id: 10,
+      name: "Siddhesh",
+      company: "JD Group",
+      date: "September 2025",
+      rating: 5,
+      text:
+        "Our agri export business needed real visibility online. The new site and SEO work brought in enquiries we simply weren't getting before.",
+      initials: "S",
+    },
+    {
+      id: 11,
+      name: "Tanmay",
+      company: "Buzzroster",
+      date: "August 2025",
+      rating: 5,
+      text:
+        "Managing influencer campaigns was chaos before this platform. Now our whole team works off one system, and it just works.",
+      initials: "T",
     },
   ],
   faqSection: {
@@ -480,13 +618,13 @@ export const defaultSiteContent: SiteContent = {
     kicker: "Contact",
     title: "Let's build something great.",
     lead:
-      "The form is wired to a Next.js route so it works immediately. Add your provider later for email delivery or storage.",
+      "Tell us what you’re building. We reply within one business day with next steps, a rough timeline and a budget range.",
     email: "hello@nexvora.com",
-    whatsapp: "+1 000 000 0000",
+    whatsapp: "+91 92702 83086",
     city: "Remote / Global",
     bookingTitle: "Book a discovery call when you are ready.",
     bookingDescription:
-      "Add your Calendly link later to turn this panel into a direct booking flow for qualified leads.",
+      "Prefer to talk it through? Send a short note with the form and we’ll share a time for a 30-minute call.",
     bookingButton: "Book a Call",
   },
   assistant: {
@@ -498,10 +636,10 @@ export const defaultSiteContent: SiteContent = {
   },
   footer: {
     description:
-      "A modern digital agency website built to showcase services, trust, process, and AI-assisted growth.",
+      "Design, development, AI and cloud for teams that want a product partner, not just a vendor.",
     copyright: "Copyright 2026 Nexvora. All rights reserved.",
     serviceLinks: ["Web Design", "App Design", "Graphic Design", "SaaS Solutions", "AI Integration"],
-    companyLinks: ["About", "Team", "Careers", "Blog"],
+    companyLinks: ["Team"],
   },
   offers: [
     "UI/UX Design & Product Experience",

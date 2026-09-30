@@ -45,5 +45,13 @@ export default async function HomePage() {
     content = defaultSiteContent;
   }
 
-  return <AgencyHome initialContent={content} />;
+  return (
+    <>
+      {/* Sets the saved theme before first paint (light unless the visitor chose dark). */}
+      <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+      <AgencyHome initialContent={content} />
+    </>
+  );
 }
+
+const THEME_BOOT = `(function(){var t='light';try{if(localStorage.getItem('nexvora-theme-v2')==='dark')t='dark'}catch(e){}document.documentElement.setAttribute('data-nx-theme',t)})();`;

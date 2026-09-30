@@ -1,2177 +1,1217 @@
-﻿"use client";
+"use client";
 
-import type { CSSProperties, FormEvent, MouseEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, FormEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   defaultSiteContent,
   normalizeSiteContent,
   type HomepageSectionId,
   type SiteContent,
 } from "@/lib/site-content";
+import "./home/nexvora.css";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  BrandMark,
+  Chat,
+  Check,
+  Close,
+  CountUp,
+  DashboardScreen,
+  DevicePair,
+  FaqList,
+  LinkedinIcon,
+  Mail,
+  Menu,
+  Moon,
+  PhoneAssistantScreen,
+  Pin,
+  Reveal,
+  Send,
+  ServiceIcon,
+  Sparkle,
+  Star,
+  Sun,
+  cx,
+  getScroller,
+  useInView,
+} from "./home/parts";
 
-type CounterProps = {
-  target: number;
-  suffix?: string;
-  active: boolean;
-  delayMs?: number;
+type AssistantMessage = { id: number; role: "user" | "assistant"; content: string };
+type Theme = "light" | "dark";
+const THEME_KEY = "nexvora-theme-v2";
+
+const mobileTabs = [
+  { label: "Home", href: "#home" },
+  { label: "Services", href: "#services" },
+  { label: "Work", href: "#work" },
+  { label: "Contact", href: "#contact" },
+] as const;
+type TabSection = "home" | "services" | "work" | "contact";
+const sectionToTab: Record<string, TabSection> = {
+  home: "home",
+  services: "services",
+  work: "work",
+  process: "work",
+  team: "work",
+  reviews: "work",
+  contact: "contact",
+  faq: "contact",
 };
 
-type AssistantMessage = {
-  id: number;
-  role: "user" | "assistant";
-  content: string;
-};
-
-function ExternalLinkIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <path
-        d="M9 7h8v8"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M17 7 7 17"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M10 7H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+function subscribeTheme(onChange: () => void) {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-nx-theme"] });
+  return () => observer.disconnect();
 }
+const readTheme = (): Theme => (document.documentElement.getAttribute("data-nx-theme") === "dark" ? "dark" : "light");
 
-function LinkedinIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <path
-        d="M6.75 9.25V18"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-      />
-      <path
-        d="M6.75 6.75v.05"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-      />
-      <path
-        d="M10.5 9.25V18"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-      />
-      <path
-        d="M14.25 18v-4.2c0-1.95 1.14-3.3 2.85-3.3 1.66 0 2.4 1.05 2.4 2.8V18"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14.25 12.15V18"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function hasPortfolio(url?: string) {
+function hasLink(url?: string) {
   return Boolean(url) && !url!.startsWith("#");
 }
 
-const mobileDockItems = [
-  { label: "Home", href: "#home", icon: "home" as const },
-  { label: "Services", href: "#services", icon: "services" as const },
-  { label: "Work", href: "#work", icon: "work" as const },
-  { label: "Contact", href: "#contact", icon: "contact" as const },
-];
+/** "Pharma CRM — Soul Pharma" → { name: "Pharma CRM", client: "Soul Pharma" } */
+function splitProject(value: string) {
+  const [name, ...rest] = value.split(/\s+[—–-]\s+/);
+  return { name: name.trim(), client: rest.join(" — ").trim() };
+}
 
-const dockSectionOrder = ["home", "services", "work", "contact"] as const;
-type DockSection = (typeof dockSectionOrder)[number];
-
-function scrollToSection(href: string) {
-  if (!href.startsWith("#")) {
-    return;
-  }
-
-  const target = document.querySelector(href);
-  if (!(target instanceof HTMLElement)) {
-    return;
-  }
-
-  const viewport = document.querySelector(".scroll-shell__viewport");
-  const scrollContainer = viewport instanceof HTMLElement ? viewport : null;
-
+function scrollToHash(href: string) {
+  if (!href.startsWith("#")) return;
+  const scroller = getScroller();
   if (href === "#home") {
-    (scrollContainer ?? window).scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    (scroller ?? window).scrollTo({ top: 0, behavior: "smooth" });
     return;
   }
-
-  const header = document.querySelector("header");
-  const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
-  const overshoot = window.innerWidth < 768 ? 56 : 40;
-  const containerTop = scrollContainer?.getBoundingClientRect().top ?? 0;
-  const currentScrollTop = scrollContainer?.scrollTop ?? window.scrollY;
-  const targetY =
-    currentScrollTop + target.getBoundingClientRect().top - containerTop - headerOffset + overshoot;
-
-  (scrollContainer ?? window).scrollTo({
-    top: Math.max(targetY, 0),
-    behavior: "smooth",
-  });
+  const target = document.querySelector(href);
+  if (!(target instanceof HTMLElement)) return;
+  const containerTop = scroller?.getBoundingClientRect().top ?? 0;
+  const current = scroller?.scrollTop ?? window.scrollY;
+  const top = current + target.getBoundingClientRect().top - containerTop - 72;
+  (scroller ?? window).scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
 }
 
-function useCountUp({ target, suffix = "", active, delayMs = 0 }: CounterProps) {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!active) {
-      return;
-    }
-
-    const start = performance.now() + delayMs;
-    const duration = 1600;
-    let raf = 0;
-
-    const tick = (time: number) => {
-      if (time < start) {
-        raf = requestAnimationFrame(tick);
-        return;
-      }
-
-      const progress = Math.min((time - start) / duration, 1);
-      const eased =
-        progress < 0.8
-          ? 1 - Math.pow(1 - progress / 0.8, 3) * 0.2
-          : 0.8 + (1 - Math.pow(1 - (progress - 0.8) / 0.2, 2)) * 0.2;
-      setValue(Math.round(target * eased));
-      if (progress < 1) {
-        raf = requestAnimationFrame(tick);
-      }
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, delayMs, target]);
-
-  return `${value}${suffix}`;
+function trackSpotlight(event: ReactPointerEvent<HTMLElement>) {
+  const el = event.currentTarget;
+  const rect = el.getBoundingClientRect();
+  el.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+  el.style.setProperty("--my", `${event.clientY - rect.top}px`);
 }
 
-function useAnimatedNumber(target: number, active: boolean, duration = 1600) {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!active) {
-      return;
-    }
-
-    const start = performance.now();
-    let raf = 0;
-
-    const tick = (time: number) => {
-      const progress = Math.min((time - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(target * eased));
-
-      if (progress < 1) {
-        raf = requestAnimationFrame(tick);
-      }
-    };
-
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, duration, target]);
-
-  return value;
-}
-
-function useInViewOnce<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
-  const [active, setActive] = useState(false);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setActive(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.25 },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return [ref, active] as const;
-}
-
-function ServiceIcon({ index }: { index: number }) {
-  const label = String(index + 1).padStart(2, "0");
-
+function SectionHeader({ kicker, title, lead, action }: { kicker: string; title: string; lead?: string; action?: React.ReactNode }) {
   return (
-    <div className="chip flex h-12 w-12 items-center justify-center rounded-2xl text-sm font-semibold text-[var(--text)]">
-      {label}
+    <div className="mb-12 grid gap-6 lg:mb-16 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-16">
+      <Reveal>
+        <div className="nx-kicker">{kicker}</div>
+        <h2 className="nx-display nx-h2 mt-4 max-w-[18ch]">{title}</h2>
+      </Reveal>
+      {(lead || action) && (
+        <Reveal delay={80} className="flex flex-col items-start gap-5 lg:pb-2">
+          {lead && <p className="nx-lead text-lg">{lead}</p>}
+          {action}
+        </Reveal>
+      )}
     </div>
   );
 }
 
-function DockIcon({
-  variant,
-  className,
-}: {
-  variant: "home" | "services" | "work" | "chat" | "contact";
-  className?: string;
-}) {
-  const common = `h-5 w-5 stroke-[1.8] fill-none ${className || ""}`;
-
-  switch (variant) {
-    case "home":
-      return (
-        <svg viewBox="0 0 24 24" className={common} aria-hidden="true">
-          <path d="M3 11.5 12 4l9 7.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M5.5 10.5V20h13V10.5" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    case "services":
-      return (
-        <svg viewBox="0 0 24 24" className={common} aria-hidden="true">
-          <path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z" stroke="currentColor" strokeLinejoin="round" />
-        </svg>
-      );
-    case "work":
-      return (
-        <svg viewBox="0 0 24 24" className={common} aria-hidden="true">
-          <path d="M4.5 7.5h15v10h-15z" stroke="currentColor" strokeLinejoin="round" />
-          <path d="M9 7.5V6a3 3 0 0 1 6 0v1.5" stroke="currentColor" strokeLinecap="round" />
-        </svg>
-      );
-    case "chat":
-      return (
-        <svg viewBox="0 0 24 24" className={common} aria-hidden="true">
-          <path d="M5 6.5h14v9H10l-4.5 4V15.5H5z" stroke="currentColor" strokeLinejoin="round" />
-        </svg>
-      );
-    case "contact":
-      return (
-        <svg viewBox="0 0 24 24" className={common} aria-hidden="true">
-          <path d="M7.5 4.5h9v15h-9z" stroke="currentColor" strokeLinejoin="round" />
-          <path d="M9.5 8.5h5M9.5 12h5M9.5 15.5h3" stroke="currentColor" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
-
-type AgencyHomeProps = {
-  initialContent?: Partial<SiteContent>;
-};
+type AgencyHomeProps = { initialContent?: Partial<SiteContent> };
 
 export default function AgencyHome({ initialContent }: AgencyHomeProps) {
-  const siteContent = useMemo(
-    () => normalizeSiteContent(initialContent ?? defaultSiteContent),
-    [initialContent],
-  );
-  const navItems = siteContent.navigation;
-  const services = siteContent.services;
-  const clientNames = siteContent.clientNames;
-  const projectNames = siteContent.projectNames;
-  const offerItems = siteContent.offers;
-  const assistantSuggestions = siteContent.assistant.suggestions;
-  const stats = siteContent.stats;
-  const processSteps = siteContent.processSteps;
-  const team = siteContent.team;
-  const reviewSeed = siteContent.reviews;
-  const faqs = siteContent.faqs;
-  const hero = siteContent.hero;
-  const brand = siteContent.brand;
-  const servicesSection = siteContent.servicesSection;
-  const showcaseSection = siteContent.showcaseSection;
-  const processSection = siteContent.processSection;
-  const teamSection = siteContent.teamSection;
-  const reviewsSection = siteContent.reviewsSection;
-  const faqSection = siteContent.faqSection;
-  const contactSection = siteContent.contactSection;
-  const assistantSection = siteContent.assistant;
-  const footer = siteContent.footer;
-  const homepageOrder = siteContent.homepageOrder;
+  const site = useMemo(() => normalizeSiteContent(initialContent ?? defaultSiteContent), [initialContent]);
+  const { brand, hero, stats, services, processSteps, team, faqs, footer, homepageOrder } = site;
+  const contactSection = site.contactSection;
+  const assistantSection = site.assistant;
 
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as Theme);
+  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    if (typeof window === "undefined") {
-      return "dark";
-    }
-
-    return window.localStorage.getItem("nexvora-theme") === "light"
-      ? "light"
-      : "dark";
-  });
-  const [headerSolid, setHeaderSolid] = useState(false);
-  const [activeFaq, setActiveFaq] = useState<number | null>(0);
-  const [assistantInput, setAssistantInput] = useState("");
-  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
-    {
-      id: 1,
-      role: "assistant",
-      content: assistantSection.greeting,
-    },
-  ]);
-  const [assistantLoading, setAssistantLoading] = useState(false);
-  const [assistantDockOpen, setAssistantDockOpen] = useState(false);
-  const [selectedRating, setSelectedRating] = useState(5);
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [activeTeamCard, setActiveTeamCard] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabSection>("home");
   const [activeServiceIndex, setActiveServiceIndex] = useState<number | null>(null);
-  const [reviews, setReviews] = useState(reviewSeed);
-  const [reviewForm, setReviewForm] = useState({
-    name: "",
-    company: "",
-    text: "",
-  });
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+
+  const [reviews, setReviews] = useState(site.reviews);
+  const [reviewForm, setReviewForm] = useState({ name: "", company: "", text: "" });
+  const [selectedRating, setSelectedRating] = useState(5);
   const [reviewNotice, setReviewNotice] = useState("");
+  const [reviewBusy, setReviewBusy] = useState(false);
+
   const [contactNotice, setContactNotice] = useState("");
   const [contactBusy, setContactBusy] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
-  const [activeSection, setActiveSection] = useState<DockSection>("home");
-  const dockScrollLockRef = useRef<number | null>(null);
+  const [newsletterNotice, setNewsletterNotice] = useState("");
 
-  const [statsRef, statsVisible] = useInViewOnce<HTMLDivElement>();
-  const [workRef, workVisible] = useInViewOnce<HTMLDivElement>();
-  const teamPopupRef = useRef<HTMLDivElement | null>(null);
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
+    { id: 1, role: "assistant", content: assistantSection.greeting },
+  ]);
   const assistantScrollRef = useRef<HTMLDivElement | null>(null);
-  const showAssistantSuggestions = !assistantMessages.some((message) => message.role === "user");
+  const tabLockRef = useRef<number | null>(null);
+  const stepRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const [statsRef, statsVisible] = useInView<HTMLDivElement>("0px 0px -20% 0px");
 
-  const projectPills = useMemo(
-    () => [...projectNames, ...projectNames],
-    [projectNames],
-  );
-
-  const count50 = useCountUp({ target: stats[0].target, suffix: stats[0].suffix, active: statsVisible, delayMs: 300 });
-  const count20 = useCountUp({ target: stats[1].target, suffix: stats[1].suffix, active: statsVisible, delayMs: 600 });
-  const count5 = useCountUp({ target: stats[2].target, suffix: stats[2].suffix, active: statsVisible, delayMs: 900 });
-  const count100 = useCountUp({ target: stats[3].target, suffix: stats[3].suffix, active: statsVisible, delayMs: 1200 });
-  const widgetProgress = useAnimatedNumber(100, true, 1800);
-  const [offerIndex, setOfferIndex] = useState(0);
+  const orderMap = useMemo(() => new Map(homepageOrder.map((id, index) => [id, index])), [homepageOrder]);
+  const orderStyle = (id: HomepageSectionId) => ({ order: orderMap.get(id) ?? 999 }) as CSSProperties;
   const activeService = activeServiceIndex === null ? null : services[activeServiceIndex];
-  const homepageOrderMap = useMemo(
-    () => new Map(homepageOrder.map((sectionId, index) => [sectionId, index])),
-    [homepageOrder],
-  );
+  const anyOverlay = mobileOpen || activeServiceIndex !== null || reviewModalOpen || assistantOpen;
+  const visibleReviews = showAllReviews ? reviews : reviews.slice(0, 6);
+  const projects = useMemo(() => site.projectNames.map(splitProject), [site.projectNames]);
+  const phoneQuestion = faqs[0]?.question ?? assistantSection.suggestions[0] ?? "How long does a project take?";
+  const phoneAnswer = faqs[0]?.answer ?? "Most projects ship in a few weeks, depending on scope.";
 
-  function sectionOrderStyle(sectionId: HomepageSectionId) {
-    return { order: homepageOrderMap.get(sectionId) ?? 999 } as CSSProperties;
-  }
-
-  function handleSmoothAnchor(
-    event: MouseEvent<HTMLAnchorElement>,
-    href: string,
-  ) {
-    if (!href.startsWith("#")) {
-      return;
+  // ── Theme: the boot script set <html data-nx-theme> before paint; mirror it here.
+  // Leaving the homepage (e.g. to /admin) drops its theme so the admin keeps its own look.
+  useEffect(() => () => document.documentElement.removeAttribute("data-nx-theme"), []);
+  const toggleTheme = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-nx-theme", next);
+    try {
+      window.localStorage.setItem(THEME_KEY, next);
+    } catch {
+      /* storage unavailable */
     }
+  };
 
-    event.preventDefault();
-    if (dockScrollLockRef.current !== null) {
-      window.clearTimeout(dockScrollLockRef.current);
-    }
-    scrollToSection(href);
-    setMobileOpen(false);
-    const nextSection = href.slice(1) as DockSection;
-    setActiveSection(nextSection);
-    dockScrollLockRef.current = window.setTimeout(() => {
-      dockScrollLockRef.current = null;
-    }, 900);
-  }
-
+  // ── Live reviews (keep the server snapshot if the fetch fails).
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("nexvora-theme", theme);
-  }, [theme]);
-
-  useEffect(() => {
-    const viewport = document.querySelector(".scroll-shell__viewport");
-
-    if (!(viewport instanceof HTMLElement)) {
-      return;
-    }
-
-    const onScroll = () => {
-      setHeaderSolid(viewport.scrollTop > 16);
+    let cancelled = false;
+    fetch("/api/reviews")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { reviews?: SiteContent["reviews"] } | null) => {
+        if (!cancelled && data?.reviews?.length) setReviews(data.reviews);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
+  // ── Header frosts once the page scrolls.
+  useEffect(() => {
+    const scroller = getScroller();
+    const target: HTMLElement | Window = scroller ?? window;
+    const onScroll = () => setScrolled((scroller?.scrollTop ?? window.scrollY) > 12);
     onScroll();
-    viewport.addEventListener("scroll", onScroll, { passive: true });
-    return () => viewport.removeEventListener("scroll", onScroll);
+    target.addEventListener("scroll", onScroll, { passive: true });
+    return () => target.removeEventListener("scroll", onScroll);
   }, []);
 
+  // ── Mobile tab bar follows the section in view.
   useEffect(() => {
-    if (!mobileOpen) {
-      return;
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setMobileOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [mobileOpen]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setOfferIndex((current) => (current + 1) % offerItems.length);
-    }, 2400);
-
-    return () => window.clearInterval(interval);
-  }, [offerItems.length]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const viewport = document.querySelector(".scroll-shell__viewport");
-    if (!(viewport instanceof HTMLElement)) {
-      return;
-    }
-
-    let frame = 0;
-
-    const updateActiveSection = () => {
-      if (dockScrollLockRef.current !== null) {
-        return;
-      }
-
-      cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const header = document.querySelector("header");
-        const headerOffset = header instanceof HTMLElement ? header.offsetHeight : 92;
-        const dockOffset = window.innerWidth < 768 ? 96 : 0;
-        const probeLine = viewport.scrollTop + headerOffset + dockOffset + (window.innerWidth < 768 ? 18 : 12);
-        let nextSection: DockSection = "home";
-
-        for (const id of dockSectionOrder) {
-          const element = document.getElementById(id);
-          if (!element) {
-            continue;
-          }
-
-          const top = element.getBoundingClientRect().top + viewport.scrollTop - viewport.getBoundingClientRect().top;
-
-          if (probeLine >= top) {
-            nextSection = id;
-          }
-        }
-
-        setActiveSection(nextSection);
-      });
-    };
-
-    updateActiveSection();
-    viewport.addEventListener("scroll", updateActiveSection, { passive: true });
-    window.addEventListener("resize", updateActiveSection);
-
-    return () => {
-      cancelAnimationFrame(frame);
-      if (dockScrollLockRef.current !== null) {
-        window.clearTimeout(dockScrollLockRef.current);
-      }
-      viewport.removeEventListener("scroll", updateActiveSection);
-      window.removeEventListener("resize", updateActiveSection);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!activeTeamCard) {
-      return;
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        return;
-      }
-
-      if (teamPopupRef.current && !teamPopupRef.current.contains(target)) {
-        setActiveTeamCard(null);
-      }
-    };
-
-    window.addEventListener("pointerdown", onPointerDown);
-    return () => window.removeEventListener("pointerdown", onPointerDown);
-  }, [activeTeamCard, teamPopupRef]);
-
-  useEffect(() => {
-    if (activeServiceIndex === null && !reviewModalOpen && !assistantDockOpen) {
-      return;
-    }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setActiveServiceIndex(null);
-        setReviewModalOpen(false);
-        setAssistantDockOpen(false);
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeServiceIndex, reviewModalOpen, assistantDockOpen]);
-
-  useEffect(() => {
-    if (activeServiceIndex === null && !reviewModalOpen && !assistantDockOpen) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [activeServiceIndex, reviewModalOpen, assistantDockOpen]);
-
-  useEffect(() => {
-    if (!assistantDockOpen) {
-      return;
-    }
-
-    const frame = window.requestAnimationFrame(() => {
-      const dock = assistantScrollRef.current;
-      if (!dock) {
-        return;
-      }
-
-      dock.scrollTo({
-        top: dock.scrollHeight,
-        behavior: "smooth",
-      });
+    const ids = Object.keys(sectionToTab);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (tabLockRef.current !== null) return;
+        const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (hit) setActiveTab(sectionToTab[hit.target.id] ?? "home");
+      },
+      { rootMargin: "-35% 0px -60% 0px" },
+    );
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
     });
+    return () => observer.disconnect();
+  }, []);
 
-    return () => window.cancelAnimationFrame(frame);
-  }, [assistantDockOpen, assistantMessages]);
+  // ── Process: the step crossing the middle of the screen is the active one.
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveStep(Number((entry.target as HTMLElement).dataset.index ?? 0));
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    stepRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, [processSteps.length]);
 
+  // ── Overlays: Esc closes, the page behind stops scrolling.
+  useEffect(() => {
+    if (!anyOverlay) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMobileOpen(false);
+      setActiveServiceIndex(null);
+      setReviewModalOpen(false);
+      setAssistantOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const scroller = getScroller();
+    const previous = scroller?.style.overflow ?? "";
+    if (scroller) scroller.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      if (scroller) scroller.style.overflow = previous;
+    };
+  }, [anyOverlay]);
+
+  useEffect(() => {
+    if (!assistantOpen) return;
+    const frame = requestAnimationFrame(() => {
+      const el = assistantScrollRef.current;
+      el?.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [assistantOpen, assistantMessages]);
+
+  const goTo = useCallback((event: ReactMouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith("#")) return;
+    event.preventDefault();
+    setMobileOpen(false);
+    scrollToHash(href);
+    const tab = sectionToTab[href.slice(1)];
+    if (tab) {
+      setActiveTab(tab);
+      if (tabLockRef.current !== null) window.clearTimeout(tabLockRef.current);
+      tabLockRef.current = window.setTimeout(() => {
+        tabLockRef.current = null;
+      }, 900);
+    }
+  }, []);
+
+  // ── Assistant
   async function handleAssistantSubmit() {
     const prompt = assistantInput.trim();
-
-    if (!prompt || assistantLoading) {
-      return;
-    }
-
+    if (!prompt || assistantLoading) return;
     setAssistantLoading(true);
     setAssistantInput("");
-
-    const userMessage: AssistantMessage = {
-      id: Date.now(),
-      role: "user",
-      content: prompt,
-    };
-    const pendingMessageId = userMessage.id + 1;
-
-    setAssistantMessages((current) => [
-      ...current,
-      userMessage,
-      {
-        id: pendingMessageId,
-        role: "assistant",
-        content: "Thinking...",
-      },
-    ]);
-
+    const userMessage: AssistantMessage = { id: Date.now(), role: "user", content: prompt };
+    const pendingId = userMessage.id + 1;
+    setAssistantMessages((current) => [...current, userMessage, { id: pendingId, role: "assistant", content: "…" }]);
     try {
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
       });
-
       const data = (await response.json()) as { reply?: string; error?: string };
-      const reply =
-        data.reply ||
-        data.error ||
-        "The assistant could not respond right now. Please try again.";
-
-      setAssistantMessages((current) =>
-        current.map((message) =>
-          message.id === pendingMessageId
-            ? {
-                ...message,
-                content: reply,
-              }
-            : message,
-        ),
-      );
+      const reply = data.reply || data.error || "The assistant couldn’t respond right now. Please try again.";
+      setAssistantMessages((current) => current.map((m) => (m.id === pendingId ? { ...m, content: reply } : m)));
     } catch {
       setAssistantMessages((current) =>
-        current.map((message) =>
-          message.id === pendingMessageId
-            ? {
-                ...message,
-                content:
-                  "The assistant is offline. Check the API configuration and try again.",
-              }
-            : message,
-        ),
+        current.map((m) => (m.id === pendingId ? { ...m, content: "The assistant is offline right now. Email us instead and we’ll reply within a day." } : m)),
       );
     } finally {
       setAssistantLoading(false);
     }
   }
 
+  // ── Reviews
   async function handleReviewSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
+    if (reviewBusy) return;
+    setReviewBusy(true);
     try {
       const response = await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...reviewForm,
-          rating: selectedRating,
-        }),
+        body: JSON.stringify({ ...reviewForm, rating: selectedRating }),
       });
-
-      if (!response.ok) {
-        throw new Error("We could not save the review right now.");
-      }
-
-      const nextReview: SiteContent["reviews"][number] = {
-        id: Date.now(),
-        name: reviewForm.name || "Anonymous",
-        company: reviewForm.company || "Client",
-        date: "Just now",
-        rating: selectedRating,
-        text: reviewForm.text || "Thank you for the kind feedback.",
-        initials: (reviewForm.name || "A")
-          .split(" ")
-          .map((part) => part[0])
-          .slice(0, 2)
-          .join("")
-          .toUpperCase(),
-      };
-
-      setReviews((current) => [nextReview, ...current]);
+      if (!response.ok) throw new Error("We couldn’t save your review right now. Please try again.");
+      const name = reviewForm.name || "Anonymous";
+      setReviews((current) => [
+        {
+          id: Date.now(),
+          name,
+          company: reviewForm.company || "Client",
+          date: "Just now",
+          rating: selectedRating,
+          text: reviewForm.text || "Thank you for the kind feedback.",
+          initials: name.split(" ").map((part) => part[0]).slice(0, 2).join("").toUpperCase(),
+        },
+        ...current,
+      ]);
       setReviewForm({ name: "", company: "", text: "" });
       setSelectedRating(5);
       setReviewModalOpen(false);
-      setReviewNotice("Review published successfully.");
+      setReviewNotice("Thank you. Your review is live.");
     } catch (error) {
-      setReviewNotice(
-        error instanceof Error ? error.message : "We could not save the review right now.",
-      );
+      setReviewNotice(error instanceof Error ? error.message : "We couldn’t save your review right now.");
+    } finally {
+      setReviewBusy(false);
     }
   }
 
+  // ── Contact
   async function handleContactSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setContactBusy(true);
     setContactNotice("");
-
-    const formData = new FormData(event.currentTarget);
-
     try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        body: formData,
-      });
-
+      const response = await fetch("/api/contact", { method: "POST", body: new FormData(form) });
       const data = (await response.json()) as { message?: string; error?: string };
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to submit inquiry.");
-      }
-
+      if (!response.ok) throw new Error(data.error || "We couldn’t send your request.");
       setContactSuccess(true);
-      setContactNotice(data.message || "Your inquiry was received.");
-      event.currentTarget.reset();
+      setContactNotice(data.message || "Thanks. We’ll reply within one business day.");
+      form.reset();
     } catch (error) {
       setContactSuccess(false);
-      setContactNotice(
-        error instanceof Error ? error.message : "We could not send your request.",
-      );
+      setContactNotice(error instanceof Error ? error.message : "We couldn’t send your request.");
     } finally {
       setContactBusy(false);
     }
   }
 
+  // ── Newsletter: stored as an inquiry so it lands in the admin inbox.
+  async function handleNewsletter(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const email = String(new FormData(form).get("email") || "").trim();
+    if (!email) return;
+    const body = new FormData();
+    body.set("fullName", "Newsletter subscriber");
+    body.set("email", email);
+    body.set("subject", "Newsletter signup");
+    body.set("message", `Please add ${email} to the ${brand.name} newsletter.`);
+    body.set("inquiryType", "Newsletter");
+    try {
+      const response = await fetch("/api/contact", { method: "POST", body });
+      if (!response.ok) throw new Error();
+      setNewsletterNotice("You’re on the list.");
+      form.reset();
+    } catch {
+      setNewsletterNotice("That didn’t go through. Please try again.");
+    }
+  }
+
+  const stepProgress = processSteps.length > 1 ? activeStep / (processSteps.length - 1) : 1;
+
   return (
-    <div className="agency-shell relative min-h-screen overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 grid-overlay opacity-70" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] mesh opacity-85" />
-
-      <header
-        className={`fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-300 ${
-          headerSolid ? "border-[var(--line)]" : "bg-transparent border-transparent"
-        }`}
-        style={
-          headerSolid
-            ? {
-                backgroundColor: "var(--bg-elevated)",
-                boxShadow: "0 18px 40px rgba(0, 0, 0, 0.12)",
-              }
-            : undefined
-        }
+    <div className="nx relative min-h-screen">
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div
+        className={cx(
+          "fixed inset-x-0 top-0 z-50 border-b transition-[background-color,border-color,box-shadow] duration-200 ease-out",
+          scrolled
+            ? "border-[var(--nx-line)] bg-[color-mix(in_srgb,var(--nx-bg)_74%,transparent)] shadow-[0_8px_24px_-18px_rgba(20,18,40,0.4)] backdrop-blur-xl backdrop-saturate-150"
+            : "border-transparent bg-transparent",
+        )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <a
-            href="#home"
-            onClick={(event) => handleSmoothAnchor(event, "#home")}
-            className="group flex items-center gap-3"
-          >
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-sm font-bold text-white shadow-lg shadow-black/25">
-              {brand.mark}
+        <header className={cx("nx-container grid h-16 grid-cols-[1fr_auto] items-center transition-colors duration-200 lg:grid-cols-[1fr_auto_1fr]", scrolled ? "text-[var(--nx-ink)]" : "text-white")}>
+          <a href="#home" onClick={(e) => goTo(e, "#home")} className="flex items-center gap-2.5 justify-self-start" aria-label={`${brand.name} home`}>
+            <BrandMark mark={brand.mark} className="size-9 text-[15px]" />
+            <span className="leading-tight">
+              <span className="block text-[17px] font-semibold tracking-tight">{brand.name}</span>
+              <span className={cx("hidden text-xs sm:block", scrolled ? "text-[var(--nx-muted)]" : "text-white/75")}>{brand.tagline}</span>
             </span>
-            <div className="leading-tight">
-              <div className="font-semibold tracking-tight text-[var(--text)]">
-                {brand.name}
-              </div>
-              <div className="text-xs text-[var(--text-soft)]">{brand.tagline}</div>
-            </div>
           </a>
-
-          <nav className="hidden items-center gap-6 lg:flex">
-            {navItems.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                onClick={(event) => handleSmoothAnchor(event, item.href)}
-                className="text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
-              >
-                {item.label}
-              </a>
-            ))}
+          <nav aria-label="Main" className="hidden lg:block">
+            <ul
+              className={cx(
+                "flex items-center gap-1 rounded-full border p-1 transition-colors duration-200",
+                scrolled ? "border-[var(--nx-line)] bg-[var(--nx-card)]" : "border-white/25 bg-white/10 backdrop-blur-md",
+              )}
+            >
+              {site.navigation.map((item) => (
+                <li key={item.label}>
+                  <a
+                    href={item.href}
+                    onClick={(e) => goTo(e, item.href)}
+                    className={cx(
+                      "block rounded-full px-4 py-1.5 text-[14px] font-medium transition-colors duration-150",
+                      scrolled ? "text-[var(--nx-muted)] hover:bg-[var(--nx-bg-deep)] hover:text-[var(--nx-ink)]" : "text-white/85 hover:bg-white/15 hover:text-white",
+                    )}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </nav>
-
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 justify-self-end">
             <button
               type="button"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="hidden h-11 items-center gap-2 rounded-full px-4 text-sm font-medium text-[var(--text)] soft-border transition-colors hover:bg-white/5 md:flex"
-              aria-label="Toggle theme"
+              onClick={toggleTheme}
+              className={cx("nx-icon-btn", !scrolled && "border-white/30 bg-white/10 text-white hover:text-white")}
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
             >
-              <span className="dot" />
-              {theme === "dark" ? "Dark" : "Light"}
+              {theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
             </button>
-            <a
-              href="#contact"
-              onClick={(event) => handleSmoothAnchor(event, "#contact")}
-              className="hidden rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/30 transition-transform hover:-translate-y-0.5 sm:inline-flex"
-            >
-              Start a Project {"→"}
+            <a href="#contact" onClick={(e) => goTo(e, "#contact")} className={cx("nx-btn hidden min-h-10 px-4 text-[14px] sm:inline-flex", scrolled ? "nx-btn-ink" : "nx-btn-white")}>
+              Start a project
+              <ArrowRight className="size-4" />
             </a>
             <button
               type="button"
-              onClick={() => setMobileOpen((current) => !current)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full soft-border lg:hidden"
-              aria-label="Open navigation menu"
+              onClick={() => setMobileOpen(true)}
+              className={cx("nx-icon-btn lg:hidden", !scrolled && "border-white/30 bg-white/10 text-white hover:text-white")}
+              aria-label="Open menu"
+              aria-expanded={mobileOpen}
             >
-              <span className="flex flex-col gap-1.5">
-                <span className="h-0.5 w-5 rounded-full bg-[var(--text)]" />
-                <span className="h-0.5 w-3.5 rounded-full bg-[var(--text-soft)]" />
-              </span>
+              <Menu className="size-5" />
             </button>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
-      {mobileOpen ? (
-        <div
-          className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        >
-          <div
-            className="absolute right-0 top-0 h-full w-[84vw] max-w-sm surface-panel-strong p-6"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-10 flex items-center justify-between">
-              <div className="text-sm font-semibold tracking-[0.2em] text-[var(--text-soft)] uppercase">
-                Menu
-              </div>
-              <button
-                type="button"
-                onClick={() => setMobileOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full soft-border"
-                aria-label="Close navigation menu"
-              >
-                &times;
+      {mobileOpen && (
+        <>
+          <div className="nx-overlay" onClick={() => setMobileOpen(false)} />
+          <div role="dialog" aria-modal="true" aria-label="Menu" className="fixed inset-y-0 right-0 z-[81] flex w-[86vw] max-w-sm flex-col bg-[var(--nx-card)] p-6 shadow-2xl" style={{ animation: "nx-sheet 240ms cubic-bezier(0.22,1,0.36,1) both" }}>
+            <div className="mb-8 flex items-center justify-between">
+              <span className="nx-kicker">Menu</span>
+              <button type="button" onClick={() => setMobileOpen(false)} className="nx-icon-btn" aria-label="Close menu" autoFocus>
+                <Close className="size-5" />
               </button>
             </div>
-            <div className="flex flex-col gap-3">
-              {navItems.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={(event) => handleSmoothAnchor(event, item.href)}
-                  className="flex items-center justify-between rounded-2xl surface-panel px-4 py-4 text-lg font-medium transition-colors hover:bg-white/5"
-                >
-                  <span>{item.label}</span>
-                  <span className="text-[var(--text-soft)]">↘</span>
+            <nav className="flex flex-col">
+              {site.navigation.map((item) => (
+                <a key={item.label} href={item.href} onClick={(e) => goTo(e, item.href)} className="nx-display flex items-center justify-between border-b border-[var(--nx-line)] py-4 text-2xl">
+                  {item.label}
+                  <ArrowUpRight className="size-5 text-[var(--nx-muted)]" />
                 </a>
               ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setTheme(theme === "dark" ? "light" : "dark");
-                }}
-                className="mt-4 flex items-center justify-between rounded-2xl surface-panel px-4 py-4 text-left text-base font-medium"
-              >
-                <span>Theme</span>
-                <span className="text-[var(--text-soft)]">{theme === "dark" ? "Dark" : "Light"}</span>
+            </nav>
+            <div className="mt-auto flex flex-col gap-3 pt-8">
+              <a href="#contact" onClick={(e) => goTo(e, "#contact")} className="nx-btn nx-btn-ink">
+                Start a project <ArrowRight className="size-4" />
+              </a>
+              <button type="button" onClick={toggleTheme} className="nx-btn nx-btn-ghost">
+                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+                {theme === "dark" ? "Light theme" : "Dark theme"}
               </button>
-        </div>
-      </div>
-      </div>
-      ) : null}
-
-      <main className="relative flex flex-col pb-24 pt-[5rem] md:pb-0 md:pt-[5.25rem]">
-        <section
-          id="home"
-          style={sectionOrderStyle("hero")}
-          className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-7xl items-center justify-center px-4 py-0 sm:px-6 sm:py-12 lg:block lg:min-h-0 lg:px-8 lg:pt-16 lg:pb-0"
-        >
-          <div className="grid w-full justify-items-center gap-6 text-center lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:justify-items-stretch lg:gap-10 lg:text-left">
-            <div className="mx-auto flex w-full max-w-[22rem] flex-col items-center space-y-5 sm:max-w-3xl lg:mx-0 lg:max-w-none lg:items-start lg:space-y-8">
-              <div className="inline-flex w-fit items-center gap-3 rounded-full chip px-4 py-2 text-sm text-[var(--text-soft)] backdrop-blur">
-                <span className="dot" />
-                {hero.eyebrow}
-              </div>
-
-              <div className="space-y-4 sm:space-y-6">
-                <h1 className="section-title mx-auto max-w-4xl text-[2.75rem] font-bold leading-[0.96] tracking-tight text-[var(--text)] sm:text-6xl lg:mx-0 lg:text-[4.9rem]">
-                  {hero.title}
-                </h1>
-                <p className="mx-auto max-w-2xl text-base leading-7 text-[var(--text-soft)] sm:text-xl lg:mx-0">
-                  {hero.description}
-                </p>
-              </div>
-
-              <div className="flex w-fit flex-col items-center gap-3 sm:w-auto sm:flex-row sm:justify-center lg:justify-start">
-                <a
-                  href="#contact"
-                  onClick={(event) => handleSmoothAnchor(event, "#contact")}
-                  className="inline-flex min-w-[15rem] items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-black/30 transition-transform hover:-translate-y-0.5 sm:min-w-0"
-                >
-                  {hero.primaryCta}
-                </a>
-                <a
-                  href="#work"
-                  onClick={(event) => handleSmoothAnchor(event, "#work")}
-                  className="inline-flex min-w-[15rem] items-center justify-center rounded-full chip px-7 py-3.5 text-base font-semibold text-[var(--text)] backdrop-blur transition-colors hover:bg-white/10 sm:min-w-0"
-                >
-                  {hero.secondaryCta} ↓
-                </a>
-              </div>
             </div>
+          </div>
+        </>
+      )}
 
-            <div className="relative mx-auto mt-1 w-full max-w-[22rem] self-center justify-self-center sm:mt-4 sm:max-w-3xl lg:mx-0 lg:mt-0 lg:max-w-none lg:self-stretch lg:justify-self-stretch">
-              <div className="absolute inset-0 -z-10 rounded-[2rem] bg-[radial-gradient(circle_at_top_left,rgba(108,99,255,0.24),transparent_50%),radial-gradient(circle_at_bottom_right,rgba(0,212,170,0.18),transparent_45%)] blur-3xl" />
-              <div className="surface-panel-strong overflow-hidden rounded-[2rem] p-3 sm:p-6 xl:h-auto xl:min-h-0">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_18%,rgba(108,99,255,0.18),transparent_24%),radial-gradient(circle_at_82%_16%,rgba(53,227,177,0.1),transparent_22%),radial-gradient(circle_at_50%_100%,rgba(255,208,106,0.08),transparent_26%)]" />
-                <div className="flex justify-center">
-                  <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)] backdrop-blur">
-                    <div className="text-[0.72rem] uppercase tracking-[0.34em] text-[var(--text-soft)]">
-                      {hero.badge}
-                    </div>
-                  </div>
-                </div>
+      <main className="relative flex flex-col pb-20 md:pb-0">
+        {/* ── Hero ───────────────────────────────────────────────────────── */}
+        <section id="home" style={orderStyle("hero")} className="nx-wash-top relative overflow-hidden pt-32 sm:pt-36">
+          <div className="nx-container flex flex-col items-center text-center">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-[12px] font-medium text-white backdrop-blur-md sm:text-[13px]">
+              <span className="size-1.5 rounded-full bg-[var(--nx-mint-bright)] shadow-[0_0_10px_#7ef7df]" />
+              {hero.eyebrow}
+            </div>
+            <h1 className="nx-display nx-hero-title mt-7 text-white">
+              {hero.title}
+              <br />
+              <span className="nx-accent-on-wash">{hero.titleAccent}</span>
+            </h1>
+            <p className="nx-hero-lead mt-6 text-white/85">{hero.description}</p>
+            <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row">
+              <a href="#contact" onClick={(e) => goTo(e, "#contact")} className="nx-btn nx-btn-white min-w-[13rem]">
+                {hero.primaryCta}
+                <ArrowRight className="size-4" />
+              </a>
+              <a href="#work" onClick={(e) => goTo(e, "#work")} className="nx-btn nx-btn-glass min-w-[13rem]">
+                {hero.secondaryCta}
+              </a>
+            </div>
+            <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[14px] text-white/85">
+              {hero.highlights.map((label) => (
+                <li key={label} className="flex items-center gap-1.5">
+                  <Check className="size-4 text-[var(--nx-mint-bright)]" />
+                  {label}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                <div className="mt-3 grid gap-3 xl:grid-cols-[1fr_1fr] xl:items-stretch sm:mt-4">
-                  <div
-                    className={`widget-water-shell relative hidden h-full min-h-[19.5rem] flex-col overflow-hidden rounded-[1.8rem] border p-4 xl:flex ${
-                      theme === "light"
-                        ? "border-[rgba(170,136,66,0.10)] bg-[linear-gradient(180deg,rgba(253,248,236,0.99),rgba(246,232,205,0.94))]"
-                        : "border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))]"
-                    }`}
-                    style={{ "--fill": `${widgetProgress}%` } as CSSProperties}
-                  >
-                    <div
-                      className={`pointer-events-none absolute inset-0 ${
-                        theme === "light"
-                          ? "bg-[radial-gradient(circle_at_50%_8%,rgba(235,199,101,0.26),transparent_24%),radial-gradient(circle_at_center,rgba(143,131,255,0.06),transparent_66%)]"
-                          : "bg-[radial-gradient(circle_at_center,rgba(53,227,177,0.12),transparent_42%),radial-gradient(circle_at_center,rgba(143,131,255,0.08),transparent_66%)]"
-                      }`}
-                    />
-                    <div
-                      className={`pointer-events-none absolute inset-x-0 top-0 h-28 ${
-                        theme === "light"
-                          ? "bg-[linear-gradient(180deg,rgba(236,201,103,0.30),rgba(252,245,230,0.16) 42%,transparent 100%)]"
-                          : "bg-[linear-gradient(180deg,rgba(53,227,177,0.08),rgba(0,0,0,0))]"
-                      }`}
-                    />
-                    <div className="relative hidden items-center justify-start gap-3 lg:flex">
-                      <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium ${theme === "light" ? "border-[rgba(170,136,66,0.14)] bg-[rgba(252,245,232,0.72)] text-[#b6841c]" : "border-white/10 bg-[rgba(255,255,255,0.03)] text-[var(--accent-2)]"}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${theme === "light" ? "bg-[#d8b35b] shadow-[0_0_12px_rgba(216,179,91,0.55)]" : "bg-[var(--accent-2)] shadow-[0_0_12px_color-mix(in_srgb,var(--accent-2)_55%,transparent)]"}`} />
-                        Scanning
-                      </span>
-                    </div>
-
-                    <div className="relative mt-4 flex min-h-[14.5rem] flex-1 items-center justify-center px-2">
-                      <div
-                        className={`widget-water-tank relative h-[13.5rem] w-full max-w-[11.5rem] overflow-hidden rounded-full border ${
-                          theme === "light"
-                            ? "border-[rgba(118,93,34,0.28)] bg-[linear-gradient(180deg,rgba(103,88,62,0.52),rgba(59,51,44,0.30))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02),0_18px_34px_rgba(0,0,0,0.10)]"
-                            : "border-white/18 bg-[linear-gradient(180deg,rgba(9,14,28,0.96),rgba(9,14,28,0.7))] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04),0_18px_34px_rgba(0,0,0,0.16)]"
-                        }`}
-                      >
-                        <div
-                          className="widget-water-fill absolute inset-x-0 bottom-0"
-                          style={{ height: `${widgetProgress}%` }}
-                        >
-                          <div className="widget-water-flow absolute inset-0" />
-                          <div className="widget-water-surface absolute inset-x-0 top-0 h-10" />
-                          <div className="widget-water-ripples absolute inset-x-0 top-0 h-14" />
-                        </div>
-                        <div className="widget-water-gloss absolute inset-0" />
-                      </div>
-
-                      <div className="absolute left-1/2 top-1/2 flex h-[5.8rem] w-[5.8rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border border-white/10 bg-[color-mix(in_srgb,var(--bg-elevated)_82%,transparent)] text-center shadow-[0_0_22px_rgba(0,0,0,0.18)] backdrop-blur">
-                        <div className="text-[1.65rem] font-semibold tracking-tight text-[var(--text)]">
-                          {widgetProgress}
-                        </div>
-                        <div className="mt-1 text-[0.5rem] uppercase tracking-[0.28em] text-[var(--text-soft)]">
-                          {hero.engineLabel}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mx-auto flex h-full w-full max-w-[28rem] min-h-0 flex-col rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--bg-elevated)_72%,transparent),color-mix(in_srgb,var(--bg)_92%,transparent))] p-2.5 sm:p-4">
-                    <div className="flex flex-1 flex-col items-center justify-start gap-1.5 pb-1.5 pt-0 sm:gap-2 sm:pb-3 sm:pt-1">
-                      {offerItems.map((item, index) => {
-                        const active = index === offerIndex;
-                        return (
-                          <div
-                            key={item}
-                            className={`flex w-full max-w-[calc(100%-0.2rem)] items-center rounded-[1.05rem] border px-3.5 py-[0.5rem] transition-all duration-500 sm:px-4 sm:py-[0.56rem] ${
-                              active
-                                ? "border-white/14 bg-white/[0.06] shadow-[0_10px_26px_rgba(0,0,0,0.14)]"
-                                : "border-white/8 bg-white/[0.025] opacity-65"
-                            }`}
-                            style={{
-                              transform: "translateX(0)",
-                            }}
-                          >
-                            <div className="flex w-full items-center gap-3">
-                              <span className={`h-2 w-2 rounded-full ${active ? "bg-[var(--accent-2)]" : "bg-white/20"}`} />
-                              <div className="min-w-0">
-                                <div className={`truncate text-[0.9rem] font-medium tracking-tight ${active ? "text-[var(--text)]" : "text-[var(--text-soft)]"}`}>
-                                  {item}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
+          <div className="nx-container relative mt-14 sm:mt-20">
+            <div aria-hidden="true" className="nx-aurora" style={{ inset: "-12% -10% -4%" }} />
+            <div className="relative mx-auto max-w-[70rem] pl-[7%]">
+              <DevicePair
+                mac={<DashboardScreen brand={brand} dashboard={hero.dashboard} />}
+                phone={<PhoneAssistantScreen title={assistantSection.dockTitle} greeting={assistantSection.greeting} question={phoneQuestion} answer={phoneAnswer} />}
+                macAlt={`${brand.name} project dashboard: ${hero.dashboard.panelTitle}, ${hero.dashboard.progressValue}% complete.`}
+                phoneAlt={`${assistantSection.dockTitle} answering “${phoneQuestion}” on a phone.`}
+              />
+              <div className="nx-float absolute right-[-2%] top-[10%] hidden items-center gap-3 rounded-2xl border border-[var(--nx-line)] bg-[var(--nx-card)] px-4 py-3 shadow-[var(--nx-shadow-lift)] lg:flex">
+                <span className="nx-pulse size-2.5 rounded-full bg-emerald-500" />
+                <span className="text-left">
+                  <span className="nx-display block text-lg">{hero.dashboard.uptimeValue}</span>
+                  <span className="block text-xs text-[var(--nx-muted)]">{hero.dashboard.uptimeLabel}</span>
+                </span>
               </div>
             </div>
           </div>
 
-          <div className="mt-12 hidden items-center gap-3 text-sm text-[var(--text-soft)] sm:flex">
-          <span className="text-[var(--text)]">Scroll</span>
-          <span className="dot" />
-          <span>{hero.scrollHint}</span>
-        </div>
+          <div className="nx-container relative pb-14 pt-16 text-center">
+            <div className="text-[13px] font-medium text-[var(--nx-muted)]">{hero.trustLabel}</div>
+            <div className="nx-marquee mt-5">
+              <div className="nx-marquee-track">
+                {[...site.clientNames, ...site.clientNames].map((name, i) => (
+                  <span key={`${name}-${i}`} aria-hidden={i >= site.clientNames.length} className="nx-display whitespace-nowrap px-7 text-[20px] text-[var(--nx-subtle)] transition-colors hover:text-[var(--nx-ink)]">
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section ref={statsRef} style={sectionOrderStyle("stats")} className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="grid gap-4 rounded-[2rem] section-shell p-5 md:grid-cols-4">
-            {[
-              { value: count50, label: stats[0].label },
-              { value: count20, label: stats[1].label },
-              { value: count5, label: stats[2].label },
-              { value: count100, label: stats[3].label },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="surface-panel rounded-[1.5rem] px-5 py-6 text-center"
-              >
-                <div className="counter text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                  {item.value}
+        {/* ── Stats ──────────────────────────────────────────────────────── */}
+        <section style={orderStyle("stats")} aria-label="In numbers" className="nx-container py-10">
+          <div ref={statsRef} className="grid grid-cols-2 border-y border-[var(--nx-line)] lg:grid-cols-4">
+            {stats.map((stat, i) => (
+              <div key={stat.label} className={cx("px-4 py-8 text-center sm:py-10", i % 2 === 1 && "border-l border-[var(--nx-line)]", i >= 2 && "border-t border-[var(--nx-line)] lg:border-t-0", i === 2 && "lg:border-l")}>
+                <div className="nx-display text-[clamp(2.6rem,5.5vw,4.25rem)] leading-none">
+                  <CountUp target={stat.target} suffix={stat.suffix} active={statsVisible} />
                 </div>
-                <div className="mt-2 text-sm uppercase tracking-[0.18em] text-[var(--text-soft)]">
-                  {item.label}
-                </div>
+                <div className="mt-3 text-[14px] text-[var(--nx-muted)]">{stat.label}</div>
               </div>
             ))}
           </div>
         </section>
 
-        <section id="services" style={sectionOrderStyle("services")} className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="section-kicker">
-                {servicesSection.kicker}
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                {servicesSection.title}
-              </h2>
+        {/* ── Services ───────────────────────────────────────────────────── */}
+        <section id="services" style={orderStyle("services")} className="nx-section">
+          <div className="nx-container">
+            <SectionHeader kicker={site.servicesSection.kicker} title={site.servicesSection.title} lead={site.servicesSection.lead} />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {services.map((service, index) => (
+                <Reveal key={service.title} delay={(index % 3) * 70}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveServiceIndex(index)}
+                    onPointerMove={trackSpotlight}
+                    className="nx-card nx-spot group flex h-full w-full cursor-pointer flex-col p-6 text-left transition-[transform,box-shadow,border-color] duration-200 ease-out hover:-translate-y-1 hover:border-[color-mix(in_srgb,var(--nx-violet)_35%,var(--nx-line))] hover:shadow-[var(--nx-shadow-lift)]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="grid size-11 place-items-center rounded-[14px] bg-[var(--nx-violet-soft)] text-[var(--nx-violet)]">
+                        <ServiceIcon index={index} className="size-[22px]" />
+                      </span>
+                      <span className="text-[13px] font-medium tabular-nums text-[var(--nx-subtle)]">{String(index + 1).padStart(2, "0")}</span>
+                    </div>
+                    <h3 className="nx-display mt-6 text-[22px]">{service.title}</h3>
+                    <p className="nx-lead mt-2 text-[15px]">{service.description}</p>
+                    <div className="mt-5 flex flex-wrap gap-1.5">
+                      {service.technologies.slice(0, 3).map((tech) => (
+                        <span key={tech} className="nx-chip">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-[14px] font-semibold text-[var(--nx-violet)]">
+                      What’s included
+                      <ArrowRight className="size-4 transition-transform duration-150 group-hover:translate-x-1" />
+                    </span>
+                  </button>
+                </Reveal>
+              ))}
             </div>
-            <p className="section-lead">
-              {servicesSection.lead}
-            </p>
           </div>
+        </section>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {services.map((service, index) => (
-              <article
-                key={service.title}
-                className="group relative overflow-hidden rounded-[1.25rem] surface-panel-strong p-3.5 sm:p-4"
-              >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,99,255,0.16),transparent_36%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        {/* ── Work ───────────────────────────────────────────────────────── */}
+        <section id="work" style={orderStyle("showcase")} className="nx-section nx-band">
+          <div className="nx-container">
+            <SectionHeader kicker={site.showcaseSection.kicker} title={site.showcaseSection.title} lead={site.showcaseSection.lead} />
+            <ol className="grid border-t border-[var(--nx-line)] lg:grid-cols-2 lg:gap-x-12">
+              {projects.map((project, i) => (
+                <Reveal as="li" key={`${project.name}-${i}`} delay={(i % 2) * 60}>
+                  <div className="group relative flex items-center gap-5 border-b border-[var(--nx-line)] py-5">
+                    <span className="w-8 shrink-0 text-[13px] tabular-nums text-[var(--nx-subtle)]">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="nx-display block text-[21px] leading-snug transition-colors duration-150 group-hover:text-[var(--nx-violet)]">{project.name}</span>
+                      {project.client && <span className="mt-0.5 block text-[14px] text-[var(--nx-muted)]">{project.client}</span>}
+                    </span>
+                    <ArrowUpRight className="size-5 shrink-0 text-[var(--nx-subtle)] transition-[transform,color] duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--nx-violet)]" />
+                  </div>
+                </Reveal>
+              ))}
+            </ol>
+            <p className="mt-8 text-[14px] text-[var(--nx-muted)]">{site.showcaseSection.note}</p>
+          </div>
+        </section>
+
+        {/* ── Process: a timeline that follows the scroll ────────────────── */}
+        <section id="process" style={orderStyle("process")} className="nx-section">
+          <div className="nx-container grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20">
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <Reveal>
+                <div className="nx-kicker">{site.processSection.kicker}</div>
+                <h2 className="nx-display nx-h2 mt-4">{site.processSection.title}</h2>
+                <p className="nx-lead mt-5 text-lg">{site.processSection.lead}</p>
+              </Reveal>
+              <div className="mt-10 hidden lg:block" aria-hidden="true">
+                <div className="flex items-baseline gap-3">
+                  <span className="nx-display text-[64px] leading-none text-[var(--nx-violet)] tabular-nums">{processSteps[activeStep]?.step ?? "01"}</span>
+                  <span className="text-[var(--nx-muted)]">/ {String(processSteps.length).padStart(2, "0")}</span>
+                </div>
+                <div className="mt-4 h-1 w-full max-w-xs overflow-hidden rounded-full bg-[var(--nx-line)]">
+                  <div className="h-full rounded-full bg-[var(--nx-violet)] transition-[width] duration-500 ease-out" style={{ width: `${Math.max(stepProgress, 0.04) * 100}%` }} />
+                </div>
+              </div>
+            </div>
+            <ol className="relative flex flex-col gap-4">
+              <span aria-hidden="true" className="absolute bottom-8 left-[27px] top-8 w-px bg-[var(--nx-line)]" />
+              <span aria-hidden="true" className="absolute left-[27px] top-8 w-px bg-[var(--nx-violet)] transition-[height] duration-500 ease-out" style={{ height: `calc((100% - 4rem) * ${stepProgress})` }} />
+              {processSteps.map((item, i) => (
+                <li
+                  key={item.step}
+                  ref={(el) => {
+                    stepRefs.current[i] = el;
+                  }}
+                  data-index={i}
+                  data-active={i === activeStep}
+                  className="nx-step nx-card relative flex gap-5 p-6"
+                >
+                  <span className={cx("relative z-10 grid size-14 shrink-0 place-items-center rounded-full border text-[15px] font-semibold tabular-nums transition-colors duration-300", i <= activeStep ? "border-[var(--nx-violet)] bg-[var(--nx-violet)] text-[var(--nx-on-violet)]" : "border-[var(--nx-line)] bg-[var(--nx-bg)] text-[var(--nx-muted)]")}>
+                    {item.step}
+                  </span>
+                  <div className="pt-1">
+                    <h3 className="nx-display text-[22px]">{item.title}</h3>
+                    <p className="nx-lead mt-2 text-[15px]">{item.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* ── Team ───────────────────────────────────────────────────────── */}
+        <section id="team" style={orderStyle("team")} className="nx-section nx-band">
+          <div className="nx-container">
+            <SectionHeader kicker={site.teamSection.kicker} title={site.teamSection.title} lead={site.teamSection.lead} />
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {team.map((member, i) => (
+                <Reveal key={member.name} delay={i * 80}>
+                  <article className="nx-card flex h-full flex-col p-6">
+                    <div className="flex items-center gap-4">
+                      <span className="nx-display grid size-16 shrink-0 place-items-center rounded-[18px] text-[22px] text-white" style={{ background: ["linear-gradient(135deg,#5b3df5,#8b6cff)", "linear-gradient(135deg,#0d9488,#2dd4bf)", "linear-gradient(135deg,#7c3aed,#ec4899)"][i % 3] }}>
+                        {member.initials}
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="nx-display text-[22px]">{member.name}</h3>
+                        <div className="mt-0.5 text-[14px] font-medium text-[var(--nx-violet)]">{member.role}</div>
+                      </div>
+                    </div>
+                    <p className="nx-lead mt-5 text-[15px]">{member.bio}</p>
+                    <div className="mt-5 flex flex-wrap gap-1.5">
+                      {member.skills.map((skill) => (
+                        <span key={skill} className="nx-chip">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-auto flex gap-2 pt-6">
+                      {hasLink(member.linkedinUrl) && (
+                        <a href={member.linkedinUrl} target="_blank" rel="noreferrer" className="nx-btn nx-btn-ghost min-h-10 px-4 text-[14px]" aria-label={`${member.name} on LinkedIn`}>
+                          <LinkedinIcon className="size-4" /> LinkedIn
+                        </a>
+                      )}
+                      {hasLink(member.portfolioUrl) && (
+                        <a href={member.portfolioUrl} target="_blank" rel="noreferrer" className="nx-btn nx-btn-ghost min-h-10 px-4 text-[14px]" aria-label={`${member.name}’s portfolio`}>
+                          Portfolio <ArrowUpRight className="size-4" />
+                        </a>
+                      )}
+                    </div>
+                  </article>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Reviews ────────────────────────────────────────────────────── */}
+        <section id="reviews" style={orderStyle("reviews")} className="nx-section">
+          <div className="nx-container">
+            <SectionHeader
+              kicker={site.reviewsSection.kicker}
+              title={site.reviewsSection.title}
+              action={
+                <button type="button" onClick={() => setReviewModalOpen(true)} className="nx-btn nx-btn-ink">
+                  {site.reviewsSection.ctaButton}
+                </button>
+              }
+            />
+            {reviewNotice && (
+              <p role="status" className="mb-6 rounded-2xl border border-[var(--nx-line)] bg-[var(--nx-card)] px-4 py-3 text-[15px]">
+                {reviewNotice}
+              </p>
+            )}
+            <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
+              {visibleReviews.map((review) => (
+                <figure key={review.id} className="nx-card mb-4 break-inside-avoid p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex gap-0.5 text-[var(--nx-violet)]" aria-label={`${review.rating} out of 5`}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} filled={i < review.rating} className="size-4" />
+                      ))}
+                    </div>
+                    <span className="text-[13px] text-[var(--nx-subtle)]">{review.date}</span>
+                  </div>
+                  <blockquote className="mt-4 text-[16px] leading-relaxed">“{review.text}”</blockquote>
+                  <figcaption className="mt-6 flex items-center gap-3">
+                    <span className="grid size-10 place-items-center rounded-full bg-[var(--nx-violet-soft)] text-[14px] font-semibold text-[var(--nx-violet)]">{review.initials}</span>
+                    <span>
+                      <span className="block font-semibold">{review.name}</span>
+                      <span className="block text-[14px] text-[var(--nx-muted)]">{review.company}</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+            {reviews.length > 6 && (
+              <div className="mt-6 flex justify-center">
+                <button type="button" onClick={() => setShowAllReviews((v) => !v)} className="nx-btn nx-btn-ghost">
+                  {showAllReviews ? "Show fewer" : `Show all ${reviews.length} reviews`}
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── Contact ────────────────────────────────────────────────────── */}
+        <section id="contact" style={orderStyle("contact")} className="nx-section nx-band">
+          <div className="nx-container grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+            <div>
+              <Reveal>
+                <div className="nx-kicker">{contactSection.kicker}</div>
+                <h2 className="nx-display nx-h2 mt-4">{contactSection.title}</h2>
+                <p className="nx-lead mt-5 text-lg">{contactSection.lead}</p>
+              </Reveal>
+              <div className="mt-10 grid gap-3">
+                <a href={`mailto:${contactSection.email}`} className="nx-card flex items-center gap-4 p-4 transition-colors hover:border-[color-mix(in_srgb,var(--nx-violet)_35%,var(--nx-line))]">
+                  <span className="grid size-11 place-items-center rounded-full bg-[var(--nx-violet-soft)] text-[var(--nx-violet)]">
+                    <Mail className="size-5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[13px] text-[var(--nx-muted)]">Email</span>
+                    <span className="block truncate font-semibold">{contactSection.email}</span>
+                  </span>
+                </a>
+                <a href={`https://wa.me/${contactSection.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="nx-card flex items-center gap-4 p-4 transition-colors hover:border-[color-mix(in_srgb,var(--nx-violet)_35%,var(--nx-line))]">
+                  <span className="grid size-11 place-items-center rounded-full bg-[var(--nx-violet-soft)] text-[var(--nx-violet)]">
+                    <Chat className="size-5" />
+                  </span>
+                  <span>
+                    <span className="block text-[13px] text-[var(--nx-muted)]">WhatsApp</span>
+                    <span className="block font-semibold">{contactSection.whatsapp}</span>
+                  </span>
+                </a>
+                <div className="nx-card flex items-center gap-4 p-4">
+                  <span className="grid size-11 place-items-center rounded-full bg-[var(--nx-violet-soft)] text-[var(--nx-violet)]">
+                    <Pin className="size-5" />
+                  </span>
+                  <span>
+                    <span className="block text-[13px] text-[var(--nx-muted)]">Based in</span>
+                    <span className="block font-semibold">{contactSection.city}</span>
+                  </span>
+                </div>
+              </div>
+              <div className="mt-6 rounded-[20px] bg-[var(--nx-ink)] p-6 text-[var(--nx-bg)]">
+                <h3 className="nx-display text-[22px]">{contactSection.bookingTitle}</h3>
+                <p className="mt-2 text-[15px] leading-relaxed opacity-75">{contactSection.bookingDescription}</p>
                 <button
                   type="button"
-                  onClick={() => setActiveServiceIndex(index)}
-                  className="relative flex w-full flex-col gap-2.5 text-left"
+                  onClick={() => {
+                    const field = document.getElementById("contact-full-name");
+                    field?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    (field as HTMLInputElement | null)?.focus({ preventScroll: true });
+                  }}
+                  className="nx-btn mt-5 bg-[var(--nx-bg)] text-[var(--nx-ink)] hover:-translate-y-px"
                 >
-                  <div className="flex items-start gap-2.5">
-                    <ServiceIcon index={index} />
-                    <div className="min-w-0 space-y-0.5">
-                      <h3 className="text-[1.02rem] font-semibold text-[var(--text)] sm:text-[1.1rem]">
-                        {service.title}
-                      </h3>
-                      <p className="max-w-[22rem] text-[0.82rem] leading-5 text-[var(--text-soft)] sm:text-sm">
-                        {service.description}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="inline-flex items-center gap-2 text-[0.82rem] font-medium text-[var(--accent-2)] sm:text-sm">
-                    Learn More <span className="transition-transform group-hover:translate-x-1">→</span>
-                  </div>
+                  {contactSection.bookingButton}
+                  <ArrowRight className="size-4" />
                 </button>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section
-          id="work"
-          ref={workRef}
-          style={sectionOrderStyle("showcase")}
-          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
-        >
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="section-kicker">
-                {showcaseSection.kicker}
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                {showcaseSection.title}
-              </h2>
-            </div>
-            <p className="section-lead">
-              {showcaseSection.lead}
-            </p>
-          </div>
-
-          <div className="relative mx-[calc(50%-50vw)] flex w-[100vw] flex-col gap-6 overflow-x-hidden">
-            <div className="surface-panel-strong ml-auto w-[calc(100vw-1rem)] rounded-[2rem] rounded-r-none p-6 sm:w-[calc(100vw-1.5rem)] lg:w-[calc(100vw-2rem)]">
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm text-[var(--text-soft)]">Project names</div>
-                  <div className="text-xl font-semibold">Launches with visible momentum</div>
-                </div>
-              </div>
-              <div className="marquee project-marquee">
-                <div className="marquee-track reverse pl-0 sm:pl-0 lg:pl-0">
-                  {projectPills.map((name, index) => (
-                    <div
-                      key={`${name}-pill-${index}`}
-                      className="chip flex h-12 min-w-[7.5rem] items-center justify-center px-4 py-3 text-xs font-medium text-[var(--text)] sm:min-w-[10rem] sm:px-5 sm:text-sm lg:min-w-[12rem] lg:text-base"
-                    >
-                      {name}
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
 
-            <div className="surface-panel-strong mr-auto w-[calc(100vw-1rem)] rounded-[2rem] rounded-l-none p-6 sm:w-[calc(100vw-1.5rem)] lg:w-[calc(100vw-2rem)]">
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm text-[var(--text-soft)]">Client logos</div>
-                  <div className="text-xl font-semibold">Trusted by product teams</div>
-                </div>
-              </div>
-              <div className="marquee project-marquee">
-                <div className="marquee-track pl-0 sm:pl-0 lg:pl-0">
-                  {[...clientNames, ...clientNames].map((name, index) => (
-                    <div
-                      key={`${name}-logo-${index}`}
-                      className="chip flex h-12 min-w-[9.5rem] items-center justify-center px-4 text-sm font-medium text-[var(--text)] sm:min-w-[11.5rem] sm:px-5 sm:text-base"
-                    >
-                      {name}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {workVisible ? (
-            <div className="mt-6 rounded-[2rem] surface-panel px-5 py-4 text-sm text-[var(--text-soft)]">
-              {showcaseSection.note}
-            </div>
-          ) : null}
-        </section>
-
-        <section
-          id="process"
-          style={sectionOrderStyle("process")}
-          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
-        >
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="section-kicker">
-                {processSection.kicker}
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                {processSection.title}
-              </h2>
-            </div>
-            <p className="section-lead">
-              {processSection.lead}
-            </p>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-5">
-            {processSteps.map((item) => (
-              <article
-                key={item.step}
-                className="surface-panel-strong rounded-[1.5rem] p-5"
-              >
-                <div className="text-3xl font-bold tracking-tight text-[var(--text)]">
-                  {item.step}
-                </div>
-                <h3 className="mt-4 text-lg font-semibold text-[var(--text)]">
-                  {item.title}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  {item.description}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section
-          id="team"
-          style={sectionOrderStyle("team")}
-          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
-        >
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="section-kicker">
-                {teamSection.kicker}
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                {teamSection.title}
-              </h2>
-            </div>
-            <p className="section-lead">
-              {teamSection.lead}
-            </p>
-          </div>
-
-          <div ref={teamPopupRef} className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2 lg:grid-cols-4">
-            {team.map((member) => (
-              <article key={member.name} className={`flip-card rounded-[1.6rem] ${activeTeamCard === member.name ? "is-flipped" : ""}`}>
-                <div className="flip-inner relative h-full min-h-[18rem]">
-                  <div className="flip-face absolute inset-0 rounded-[1.6rem] surface-panel-strong p-4 sm:p-5">
-                    <div className="pointer-events-none absolute left-4 top-4 bottom-4 w-px rounded-full bg-[linear-gradient(180deg,rgba(53,227,177,0.08),rgba(53,227,177,0.55),rgba(143,131,255,0.06))] opacity-80" />
-                    <div className="flex h-full flex-col pl-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,rgba(108,99,255,0.18),rgba(0,212,170,0.16))] text-lg font-bold text-white">
-                          {member.initials}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTeamCard((current) => (current === member.name ? null : member.name))}
-                          className="chip flex h-9 w-9 items-center justify-center text-sm text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
-                          aria-pressed={activeTeamCard === member.name}
-                          aria-label="Flip card"
-                        >
-                          ⟳
-                        </button>
-                      </div>
-
-                      <div className="mt-4 space-y-1">
-                        <h3 className="text-lg font-semibold text-[var(--text)]">{member.name}</h3>
-                        <div className="text-[11px] uppercase tracking-[0.2em] text-[var(--accent-2)]">
-                          {member.role}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {member.skills.map((skill) => (
-                          <span
-                            key={skill}
-                            className="chip px-3 py-1 text-[11px] text-[var(--text-soft)]"
-                          >
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="mt-auto flex items-center justify-start gap-3 pt-4">
-                        {hasPortfolio(member.linkedinUrl) ? (
-                          <a
-                            href={member.linkedinUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(53,227,177,0.16),rgba(143,131,255,0.12))] text-[var(--text)] transition-transform hover:-translate-y-0.5"
-                            aria-label={`${member.name} LinkedIn`}
-                          >
-                            <LinkedinIcon className="h-4 w-4" />
-                          </a>
-                        ) : (
-                          <span
-                            className="inline-flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-white/10 bg-white/5 text-[var(--text-soft)] opacity-40"
-                            aria-label={`${member.name} LinkedIn unavailable`}
-                            aria-disabled="true"
-                          >
-                            <LinkedinIcon className="h-4 w-4" />
-                          </span>
-                        )}
-                        {hasPortfolio(member.portfolioUrl) ? (
-                          <a
-                            href={member.portfolioUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[linear-gradient(135deg,rgba(108,99,255,0.16),rgba(0,212,170,0.12))] text-[var(--text)] transition-transform hover:-translate-y-0.5"
-                            aria-label={`${member.name} portfolio`}
-                          >
-                            <ExternalLinkIcon className="h-4 w-4" />
-                          </a>
-                        ) : (
-                          <span
-                            className="inline-flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-white/10 bg-white/5 text-[var(--text-soft)] opacity-40"
-                            aria-label={`${member.name} portfolio unavailable`}
-                            aria-disabled="true"
-                          >
-                            <ExternalLinkIcon className="h-4 w-4" />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flip-face flip-back absolute inset-0 rounded-[1.6rem] surface-panel-strong p-4 sm:p-5">
-                    <div className="pointer-events-none absolute left-4 top-4 bottom-4 w-px rounded-full bg-[linear-gradient(180deg,rgba(53,227,177,0.08),rgba(53,227,177,0.55),rgba(143,131,255,0.06))] opacity-80" />
-                    <div className="flex h-full flex-col pl-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="text-sm uppercase tracking-[0.2em] text-[var(--text-soft)]">
-                          Bio
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTeamCard(null)}
-                          className="chip flex h-9 w-9 items-center justify-center text-xs text-[var(--text-soft)] transition-colors hover:text-[var(--text)]"
-                          aria-label="Close bio"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      <p className="mt-4 text-sm leading-7 text-[var(--text)]">{member.bio}</p>
-                      <div className="mt-auto flex items-center gap-3 pt-4">
-                        <a
-                          href={member.portfolioUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(108,99,255,0.16),rgba(0,212,170,0.12))] px-4 text-sm font-medium text-[var(--text)] transition-transform hover:-translate-y-0.5"
-                          aria-label={`${member.name} portfolio`}
-                        >
-                          <ExternalLinkIcon className="h-4 w-4" />
-                          Portfolio
-                        </a>
-                        <a
-                          href={member.linkedinUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(53,227,177,0.16),rgba(143,131,255,0.12))] px-4 text-sm font-medium text-[var(--text)] transition-transform hover:-translate-y-0.5"
-                          aria-label={`${member.name} LinkedIn`}
-                        >
-                          <LinkedinIcon className="h-4 w-4" />
-                          LinkedIn
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="reviews" style={sectionOrderStyle("reviews")} className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44">
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="section-kicker">
-                {reviewsSection.kicker}
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                {reviewsSection.title}
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setReviewModalOpen(true)}
-              className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-6 py-3 text-sm font-semibold text-white"
-            >
-              {reviewsSection.ctaButton}
-            </button>
-          </div>
-
-          {reviewNotice ? (
-            <div className="mb-4 rounded-2xl surface-panel px-4 py-3 text-sm text-[var(--text-soft)]">
-              {reviewNotice}
-            </div>
-          ) : null}
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            {reviews.map((review) => (
-              <article key={review.id} className="surface-panel-strong flex h-full min-h-[18rem] flex-col justify-between rounded-[1.6rem] p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex gap-1 text-amber-300">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <span key={index} aria-hidden="true">
-                        {index < review.rating ? "★" : "☆"}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="text-xs text-[var(--text-soft)]">{review.date}</div>
-                </div>
-                <p className="mt-5 flex-1 text-sm leading-7 text-[var(--text)]">{review.text}</p>
-                <div className="mt-8 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(108,99,255,0.22),rgba(0,212,170,0.18))] text-sm font-bold text-white">
-                    {review.initials}
+            <Reveal delay={80}>
+              <form onSubmit={handleContactSubmit} className="nx-card p-6 sm:p-8">
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="contact-full-name" className="nx-label">
+                      Full name <span className="text-[var(--nx-violet)]">*</span>
+                    </label>
+                    <input id="contact-full-name" name="fullName" required autoComplete="name" className="nx-field" placeholder="Your name" />
                   </div>
                   <div>
-                    <div className="font-medium text-[var(--text)]">{review.name}</div>
-                    <div className="text-sm text-[var(--text-soft)]">{review.company}</div>
+                    <label htmlFor="contact-email" className="nx-label">
+                      Work email <span className="text-[var(--nx-violet)]">*</span>
+                    </label>
+                    <input id="contact-email" name="email" type="email" required autoComplete="email" className="nx-field" placeholder="you@company.com" />
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {assistantDockOpen ? (
-          <>
-            <div
-              className="fixed inset-0 z-[120] lg:hidden"
-              onClick={() => setAssistantDockOpen(false)}
-            >
-              <div
-                className={`absolute inset-0 ${
-                  theme === "light"
-                    ? "bg-[linear-gradient(180deg,rgba(252,246,233,0.98),rgba(244,234,213,0.98))]"
-                    : "bg-[linear-gradient(180deg,rgba(4,8,20,0.98),rgba(8,13,25,0.99))]"
-                } backdrop-blur-[12px]`}
-                aria-hidden="true"
-              />
-              <section
-                id="assistant-dock"
-                className={`absolute inset-0 flex h-full w-full flex-col overflow-hidden border shadow-[0_30px_80px_rgba(0,0,0,0.42)] ${
-                  theme === "light"
-                    ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.995),rgba(244,234,213,0.985))] text-[#181310]"
-                    : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
-                }`}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="relative flex items-start justify-between gap-4 border-b border-white/5 px-4 pb-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] sm:px-5">
-                  <div className="relative">
-                    <div className={`text-[10px] uppercase tracking-[0.34em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
-                      {assistantSection.dockTitle}
-                    </div>
-                    <div className={`mt-2 text-lg font-semibold ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
-                      {assistantSection.dockTitle}
-                    </div>
-                    <p className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#7a6850]" : "text-white/56"}`}>
-                      {assistantSection.dockDescription}
-                    </p>
+                  <div>
+                    <label htmlFor="contact-phone" className="nx-label">
+                      Phone
+                    </label>
+                    <input id="contact-phone" name="phone" type="tel" autoComplete="tel" className="nx-field" placeholder="+91 98765 43210" />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setAssistantDockOpen(false)}
-                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors ${
-                      theme === "light"
-                        ? "border-black/10 bg-white/70 text-[#181310] hover:bg-white"
-                        : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
-                    }`}
-                    aria-label={`Close ${assistantSection.dockTitle}`}
-                  >
-                    &times;
-                  </button>
-                </div>
-
-                <div
-                  ref={assistantScrollRef}
-                  className="flex-1 overflow-y-auto px-4 py-4 sm:px-5"
-                >
-                  <div className="space-y-3">
-                    {assistantMessages.map((message) => {
-                      const isUser = message.role === "user";
-
-                      return (
-                        <div
-                          key={message.id}
-                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[85%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm ${
-                              isUser
-                                ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-white"
-                                : theme === "light"
-                                  ? "border border-black/5 bg-white/72 text-[#2a2118]"
-                                  : "border border-white/8 bg-white/[0.04] text-white/88"
-                            }`}
-                          >
-                            <div className="whitespace-pre-wrap">{message.content}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="border-t border-white/5 bg-black/5 p-3 sm:p-4 dock-safe">
-                  {showAssistantSuggestions ? (
-                    <div className="-mx-1 mb-3 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1">
-                      {assistantSuggestions.map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => setAssistantInput(item)}
-                          className="chip shrink-0 whitespace-nowrap px-3 py-1.5 text-[11px] text-[var(--text-soft)] shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void handleAssistantSubmit();
-                    }}
-                    className="relative"
-                  >
-                    <div className="flex items-center gap-2 rounded-[1.55rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.16)]">
-                      <input
-                        value={assistantInput}
-                        onChange={(event) => setAssistantInput(event.target.value)}
-                        className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]"
-                        placeholder={`Message ${assistantSection.dockTitle}...`}
-                        aria-label={`Message ${assistantSection.dockTitle}`}
-                      />
-                      <button
-                        type="submit"
-                        disabled={assistantLoading || !assistantInput.trim()}
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(0,0,0,0.2)] transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
-                        aria-label="Send message"
-                      >
-                        ↑
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </section>
-            </div>
-
-            <div className="pointer-events-none fixed inset-0 z-[66] hidden lg:block">
-              <section
-                id="assistant-dock"
-                className={`pointer-events-auto fixed bottom-4 right-4 flex flex-col overflow-hidden rounded-[1.75rem] border shadow-[0_30px_80px_rgba(0,0,0,0.42)] ${
-                  theme === "light"
-                    ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.995),rgba(244,234,213,0.985))] text-[#181310]"
-                    : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
-                }`}
-                style={{
-                  right: "1rem",
-                  bottom: "1rem",
-                  width: "min(26rem, calc(100vw - 2rem))",
-                  height: "min(38rem, calc(100vh - 8.5rem))",
-                  maxHeight: "calc(100vh - 8.5rem)",
-                }}
-                onClick={(event) => event.stopPropagation()}
-              >
-                <div className="relative flex items-start justify-between gap-4 border-b border-white/5 px-4 py-4 sm:px-5">
-                  <div className="relative">
-                    <div className={`text-[10px] uppercase tracking-[0.34em] ${theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"}`}>
-                      {assistantSection.dockTitle}
-                    </div>
-                    <div className={`mt-2 text-lg font-semibold ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
-                      {assistantSection.dockTitle}
-                    </div>
-                    <p className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#7a6850]" : "text-white/56"}`}>
-                      {assistantSection.dockDescription}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setAssistantDockOpen(false)}
-                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors ${
-                      theme === "light"
-                        ? "border-black/10 bg-white/70 text-[#181310] hover:bg-white"
-                        : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
-                    }`}
-                    aria-label={`Close ${assistantSection.dockTitle}`}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div
-                  ref={assistantScrollRef}
-                  className="flex-1 overflow-y-auto px-4 py-4 sm:px-5"
-                >
-                  <div className="space-y-3">
-                    {assistantMessages.map((message) => {
-                      const isUser = message.role === "user";
-
-                      return (
-                        <div
-                          key={message.id}
-                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[85%] rounded-[1.35rem] px-4 py-3 text-sm leading-6 shadow-sm ${
-                              isUser
-                                ? "bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-white"
-                                : theme === "light"
-                                  ? "border border-black/5 bg-white/72 text-[#2a2118]"
-                                  : "border border-white/8 bg-white/[0.04] text-white/88"
-                            }`}
-                          >
-                            <div className="whitespace-pre-wrap">{message.content}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="border-t border-white/5 bg-black/5 p-3 sm:p-4 dock-safe">
-                  {showAssistantSuggestions ? (
-                    <div className="-mx-1 mb-3 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1">
-                      {assistantSuggestions.map((item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => setAssistantInput(item)}
-                          className="chip shrink-0 whitespace-nowrap px-3 py-1.5 text-[11px] text-[var(--text-soft)] shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
-                        >
-                          {item}
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void handleAssistantSubmit();
-                    }}
-                    className="relative"
-                  >
-                    <div className="flex items-center gap-2 rounded-[1.55rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.16)]">
-                      <input
-                        value={assistantInput}
-                        onChange={(event) => setAssistantInput(event.target.value)}
-                        className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-[var(--text)] outline-none placeholder:text-[var(--text-soft)]"
-                        placeholder={`Message ${assistantSection.dockTitle}...`}
-                        aria-label={`Message ${assistantSection.dockTitle}`}
-                      />
-                      <button
-                        type="submit"
-                        disabled={assistantLoading || !assistantInput.trim()}
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(0,0,0,0.2)] transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60"
-                        aria-label="Send message"
-                      >
-                        ↑
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </section>
-            </div>
-          </>
-        ) : (
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation();
-              setAssistantDockOpen(true);
-            }}
-            className={`assistant-fab z-[90] inline-flex h-12 w-12 items-center justify-center rounded-full border backdrop-blur-xl transition-transform bottom-[5.75rem] sm:bottom-3 ${
-              theme === "light"
-                ? "border-[rgba(170,136,66,0.16)] bg-[linear-gradient(135deg,rgba(252,246,233,0.96),rgba(244,234,213,0.9))] text-[#181310]"
-                : "border-white/10 bg-[linear-gradient(135deg,rgba(12,18,34,0.96),rgba(8,13,25,0.88))] text-[var(--text)]"
-              }`}
-            aria-expanded={assistantDockOpen}
-            aria-controls="assistant-dock"
-            aria-label="Open Studio AI"
-            style={{
-              position: "fixed",
-              right: "1rem",
-            }}
-          >
-            <span className="assistant-fab-glow" aria-hidden="true" />
-            <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-base text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
-              ✦
-            </span>
-          </button>
-        )}
-
-        <section
-          id="contact"
-          style={sectionOrderStyle("contact")}
-          className="mx-auto max-w-7xl px-4 py-14 scroll-mt-36 sm:px-6 sm:scroll-mt-40 lg:px-8 lg:scroll-mt-44"
-        >
-          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="section-kicker">
-                {contactSection.kicker}
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                {contactSection.title}
-              </h2>
-            </div>
-            <p className="max-w-2xl text-[var(--text-soft)]">
-              {contactSection.lead}
-            </p>
-          </div>
-
-          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <form
-              onSubmit={handleContactSubmit}
-              className="surface-panel-strong rounded-[2rem] p-6"
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Full Name *
-                  </label>
-                  <input name="fullName" required className="field" placeholder="Your name" />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Email Address *
-                  </label>
-                  <input name="email" type="email" required className="field" placeholder="you@company.com" />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Phone Number
-                  </label>
-                  <input name="phone" className="field" placeholder="+1 555 000 0000" />
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Inquiry Type
-                  </label>
-                  <div className="select-wrap">
-                    <select name="inquiryType" className="field select-field">
+                  <div>
+                    <label htmlFor="contact-type" className="nx-label">
+                      What’s this about?
+                    </label>
+                    <select id="contact-type" name="inquiryType" className="nx-field">
                       <option>Requirement Discussion</option>
                       <option>Project Consultation</option>
                       <option>General Contact</option>
                       <option>Tips & Feedback</option>
                     </select>
                   </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="contact-subject" className="nx-label">
+                      Subject <span className="text-[var(--nx-violet)]">*</span>
+                    </label>
+                    <input id="contact-subject" name="subject" required className="nx-field" placeholder="What do you want to build?" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="contact-message" className="nx-label">
+                      Message <span className="text-[var(--nx-violet)]">*</span>
+                    </label>
+                    <textarea id="contact-message" name="message" required rows={5} className="nx-field resize-none" placeholder="Goals, timeline, budget range and any reference links." />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="contact-file" className="nx-label">
+                      Attach a brief <span className="font-normal text-[var(--nx-muted)]">(optional)</span>
+                    </label>
+                    <input id="contact-file" name="attachment" type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" className="nx-field" />
+                  </div>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Subject *
-                  </label>
-                  <input name="subject" required className="field" placeholder="Tell us what you want to build" />
+                <div className="mt-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-[14px] text-[var(--nx-muted)]">We reply within one business day.</p>
+                  <button type="submit" disabled={contactBusy} className="nx-btn nx-btn-violet">
+                    {contactBusy ? "Sending…" : "Send request"}
+                    {!contactBusy && <Send className="size-4 rotate-90" />}
+                  </button>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Message *
-                  </label>
-                  <textarea
-                    name="message"
-                    required
-                    rows={6}
-                    className="field resize-none"
-                    placeholder="Share your goals, timeline, and any reference links."
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Attach File
-                  </label>
-                  <input
-                    name="attachment"
-                    type="file"
-                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                    className="field file:mr-4 file:rounded-full file:border-0 file:bg-white/10 file:px-4 file:py-2 file:text-sm file:font-medium file:text-[var(--text)]"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={contactBusy}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {contactBusy ? "Submitting..." : "Submit Request"}
+                {contactNotice && (
+                  <p role="status" className={cx("mt-5 rounded-xl px-4 py-3 text-[15px]", contactSuccess ? "nx-success" : "nx-error")}>
+                    {contactNotice}
+                  </p>
+                )}
+              </form>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ── FAQ ────────────────────────────────────────────────────────── */}
+        <section id="faq" style={orderStyle("faqs")} className="nx-section">
+          <div className="nx-container grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+            <Reveal>
+              <div className="nx-kicker">{site.faqSection.kicker}</div>
+              <h2 className="nx-display nx-h2 mt-4">{site.faqSection.title}</h2>
+              <button type="button" onClick={() => setAssistantOpen(true)} className="nx-btn nx-btn-ghost mt-8">
+                <Sparkle className="size-4" />
+                Ask us in {assistantSection.dockTitle.toLowerCase()}
               </button>
-              {contactNotice ? (
-                <div
-                  className={`mt-4 rounded-2xl px-4 py-3 text-sm ${
-                    contactSuccess
-                      ? "border border-emerald-400/20 bg-emerald-400/10 text-emerald-100"
-                      : "surface-panel text-[var(--text-soft)]"
-                  }`}
-                >
-                  {contactNotice}
-                </div>
-              ) : null}
-            </form>
+            </Reveal>
+            <FaqList items={faqs} />
+          </div>
+        </section>
 
-            <div className="space-y-6">
-              <div className="surface-panel-strong rounded-[2rem] p-6">
-                <div className="section-kicker">
-                  Quick Contact
-                </div>
-                <div className="mt-4 space-y-4 text-sm text-[var(--text-soft)]">
-                  <div className="flex items-center justify-between gap-4 rounded-2xl surface-panel px-4 py-4">
-                    <span>Email</span>
-                    <span className="text-[var(--text)]">{contactSection.email}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4 rounded-2xl surface-panel px-4 py-4">
-                    <span>WhatsApp</span>
-                    <span className="text-[var(--text)]">{contactSection.whatsapp}</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4 rounded-2xl surface-panel px-4 py-4">
-                    <span>City</span>
-                    <span className="text-[var(--text)]">{contactSection.city}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="surface-panel-strong rounded-[2rem] p-6">
-                <div className="section-kicker">
-                  Booking
-                </div>
-                <h3 className="mt-3 text-2xl font-semibold text-[var(--text)]">
-                  {contactSection.bookingTitle}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-[var(--text-soft)]">
-                  {contactSection.bookingDescription}
-                </p>
-                <a
-                  href="#home"
-                  onClick={(event) => handleSmoothAnchor(event, "#home")}
-                  className="mt-5 inline-flex items-center justify-center rounded-full surface-panel px-6 py-3 text-sm font-semibold text-[var(--text)]"
-                >
-                  {contactSection.bookingButton}
+        {/* ── Footer ─────────────────────────────────────────────────────── */}
+        <footer style={orderStyle("footer")}>
+          <div className="nx-wash-bottom">
+            <div className="nx-container pb-20 pt-32 text-center">
+              <h2 className="nx-display mx-auto max-w-[16ch] text-[clamp(2.4rem,6vw,5rem)] text-white">
+                Have something in mind? <span className="nx-accent-on-wash">Let’s build it.</span>
+              </h2>
+              <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <a href="#contact" onClick={(e) => goTo(e, "#contact")} className="nx-btn nx-btn-white min-w-[13rem]">
+                  {hero.primaryCta} <ArrowRight className="size-4" />
+                </a>
+                <a href={`mailto:${contactSection.email}`} className="nx-btn nx-btn-glass min-w-[13rem]">
+                  {contactSection.email}
                 </a>
               </div>
             </div>
           </div>
-        </section>
-
-        <section style={sectionOrderStyle("faqs")} className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <div className="section-kicker">
-                {faqSection.kicker}
-              </div>
-              <h2 className="section-title mt-3 text-3xl font-semibold text-[var(--text)] sm:text-4xl">
-                {faqSection.title}
-              </h2>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2 lg:auto-rows-min">
-            {faqs.map((faq, index) => {
-              const expanded = activeFaq === index;
-
-              return (
-                <button
-                  key={faq.question}
-                  type="button"
-                  onClick={() => setActiveFaq(expanded ? null : index)}
-                  className={`surface-panel-strong rounded-[1.6rem] p-5 text-left transition-all duration-300 ${
-                    expanded ? "lg:col-span-2" : "lg:col-span-1"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <h3 className="text-lg font-semibold text-[var(--text)]">{faq.question}</h3>
-                    <span className="text-2xl text-[var(--text-soft)]">{expanded ? "−" : "+"}</span>
-                  </div>
-                  <div
-                    className={`grid transition-all duration-300 ${
-                      expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <p className="mt-4 text-sm leading-7 text-[var(--text-soft)]">{faq.answer}</p>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <footer style={sectionOrderStyle("footer")} className="surface-panel border-t border-white/10">
-          <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
-              <div className="space-y-5 pb-2">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-white font-bold">
-                    {brand.mark}
-                  </span>
-                  <div>
-                    <div className="font-semibold text-[var(--text)]">{brand.name}</div>
-                    <div className="text-sm text-[var(--text-soft)]">{brand.tagline}</div>
-                  </div>
-                </div>
-                <p className="max-w-sm text-sm leading-7 text-[var(--text-soft)]">
-                  {footer.description}
-                </p>
-              </div>
-
+          <div className="nx-footer">
+            <div className="nx-container grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.3fr]">
               <div>
-                <div className="section-kicker footer-kicker">
-                  Services
+                <div className="flex items-center gap-2.5">
+                  <BrandMark mark={brand.mark} className="size-9 text-[15px]" />
+                  <span className="text-[17px] font-semibold">{brand.name}</span>
                 </div>
-                <div className="mt-4 grid gap-3 text-sm text-[var(--text-soft)]">
-                  {footer.serviceLinks.map((service) => (
-                    <a
-                      key={service}
-                      href="#services"
-                      onClick={(event) => handleSmoothAnchor(event, "#services")}
-                      className="transition-colors hover:text-[var(--text)]"
-                    >
-                      {service}
-                    </a>
+                <p className="mt-4 max-w-xs text-[15px] leading-relaxed text-white/75">{footer.description}</p>
+              </div>
+              <nav aria-label="Services">
+                <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/60">Services</div>
+                <ul className="mt-4 grid gap-2.5 text-[15px] text-white/85">
+                  {footer.serviceLinks.map((item) => (
+                    <li key={item}>
+                      <a href="#services" onClick={(e) => goTo(e, "#services")} className="hover:text-white">
+                        {item}
+                      </a>
+                    </li>
                   ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="section-kicker footer-kicker">
-                  Company
-                </div>
-                <div className="mt-4 grid gap-3 text-sm text-[var(--text-soft)]">
+                </ul>
+              </nav>
+              <nav aria-label="Company">
+                <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/60">Company</div>
+                <ul className="mt-4 grid gap-2.5 text-[15px] text-white/85">
                   {footer.companyLinks.map((item) => (
-                    <a
-                      key={item}
-                      href="#home"
-                      onClick={(event) => handleSmoothAnchor(event, "#home")}
-                      className="transition-colors hover:text-[var(--text)]"
-                    >
-                      {item}
-                    </a>
+                    <li key={item}>
+                      <a href="#team" onClick={(e) => goTo(e, "#team")} className="hover:text-white">
+                        {item}
+                      </a>
+                    </li>
                   ))}
-                </div>
-              </div>
-
+                  <li>
+                    <a href="#reviews" onClick={(e) => goTo(e, "#reviews")} className="hover:text-white">
+                      Reviews
+                    </a>
+                  </li>
+                </ul>
+              </nav>
               <div>
-                <div className="section-kicker footer-kicker">
-                  Contact
-                </div>
-                <div className="mt-4 grid gap-3 text-sm text-[var(--text-soft)]">
-                  <div>{contactSection.email}</div>
-                  <div>{contactSection.whatsapp}</div>
-                  <div>{contactSection.city}</div>
-                  <form className="mt-4 flex gap-2">
-                    <input className="field flex-1" placeholder="Newsletter email" />
-                    <button
-                      type="button"
-                      className="rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-4 py-3 text-sm font-semibold text-white"
-                    >
-                      Join
-                    </button>
-                  </form>
-                </div>
+                <div className="text-[13px] font-semibold uppercase tracking-[0.14em] text-white/60">Newsletter</div>
+                <p className="mt-4 text-[15px] text-white/75">One short note when we ship something worth reading.</p>
+                <form onSubmit={handleNewsletter} className="mt-4 flex gap-2">
+                  <label htmlFor="nx-newsletter" className="sr-only">
+                    Email address
+                  </label>
+                  <input id="nx-newsletter" name="email" type="email" required placeholder="you@company.com" className="min-h-11 min-w-0 flex-1 rounded-full border border-white/25 bg-white/10 px-4 text-[15px] text-white placeholder:text-white/55 focus-visible:border-white focus-visible:outline-none" />
+                  <button type="submit" className="nx-btn nx-btn-white min-h-11 px-5 text-[14px]">
+                    Join
+                  </button>
+                </form>
+                {newsletterNotice && (
+                  <p role="status" className="mt-2 text-[14px] text-white/80">
+                    {newsletterNotice}
+                  </p>
+                )}
               </div>
             </div>
-
-            <div className="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-[var(--text-soft)] md:flex-row md:items-center md:justify-between">
-              <div>{footer.copyright}</div>
-              <div className="flex flex-wrap gap-5">
-                <a href="#home" onClick={(event) => handleSmoothAnchor(event, "#home")}>Privacy Policy</a>
-                <a href="#home" onClick={(event) => handleSmoothAnchor(event, "#home")}>Terms of Service</a>
-              </div>
+            <div className="nx-container flex flex-col gap-3 border-t border-white/15 py-6 text-[14px] text-white/65 sm:flex-row sm:items-center sm:justify-between">
+              <span>{footer.copyright}</span>
+              <span>
+                {contactSection.city} · <a href={`mailto:${contactSection.email}`} className="hover:text-white">{contactSection.email}</a>
+              </span>
             </div>
           </div>
         </footer>
       </main>
 
-      <div className="dock-safe fixed inset-x-0 bottom-0 z-40 surface-panel border-t border-white/10 backdrop-blur-xl md:hidden">
-        <div className="mx-auto grid max-w-3xl grid-cols-4 gap-1 px-3 py-2">
-          {mobileDockItems.map((item) => {
-            const isActive = activeSection === item.href.slice(1);
-
+      {/* ── Mobile tab bar ─────────────────────────────────────────────── */}
+      <nav aria-label="Sections" className="nx-tabbar fixed inset-x-0 bottom-0 z-40 md:hidden">
+        <ul className="grid grid-cols-4 px-2 py-1.5">
+          {mobileTabs.map((tab) => {
+            const active = activeTab === tab.href.slice(1);
             return (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={(event) => handleSmoothAnchor(event, item.href)}
-              aria-current={isActive ? "page" : undefined}
-              className={`bottom-dock-item relative flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] transition-all duration-300 ${
-                isActive
-                  ? "is-active bg-white/10 text-[var(--text)]"
-                  : "text-[var(--text-soft)] hover:bg-white/5 hover:text-[var(--text)]"
-              }`}
-            >
-              <DockIcon variant={item.icon} className={isActive ? "scale-110" : ""} />
-              <span>{item.label}</span>
-            </a>
+              <li key={tab.label}>
+                <a href={tab.href} onClick={(e) => goTo(e, tab.href)} aria-current={active ? "page" : undefined} className={cx("flex min-h-11 flex-col items-center justify-center rounded-xl text-[12px] font-medium transition-colors", active ? "text-[var(--nx-violet)]" : "text-[var(--nx-muted)]")}>
+                  <span className={cx("mb-1 h-1 w-5 rounded-full transition-colors", active ? "bg-[var(--nx-violet)]" : "bg-transparent")} />
+                  {tab.label}
+                </a>
+              </li>
             );
           })}
-        </div>
-      </div>
+        </ul>
+      </nav>
 
-      {activeService ? (
-        <div
-          className={`fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto px-3 py-3 backdrop-blur-sm sm:px-6 sm:py-6 ${theme === "light" ? "bg-black/45" : "bg-black/70"}`}
-          onClick={() => setActiveServiceIndex(null)}
+      {/* ── Assistant ──────────────────────────────────────────────────── */}
+      {!assistantOpen && !mobileOpen && activeServiceIndex === null && !reviewModalOpen && (
+        <button
+          type="button"
+          onClick={() => setAssistantOpen(true)}
+          className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-[var(--nx-ink)] p-2 text-[14px] md:pr-4 font-semibold text-[var(--nx-bg)] shadow-[0_16px_36px_-12px_rgba(22,21,28,0.55)] transition-transform hover:-translate-y-0.5 md:bottom-6 md:right-6"
+          aria-label={`Open ${assistantSection.dockTitle}`}
+          aria-expanded={assistantOpen}
+          aria-controls="nx-assistant"
         >
-          <div
-            className={`my-auto w-full max-w-[68rem] max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-[2rem] border p-4 shadow-[0_30px_90px_rgba(0,0,0,0.48)] sm:p-6 lg:min-h-[32rem] ${
-              theme === "light"
-                ? "border-[rgba(170,136,66,0.12)] bg-[linear-gradient(180deg,rgba(252,246,233,0.99),rgba(244,234,213,0.98))] text-[#181310]"
-                : "border-white/10 bg-[rgba(9,14,26,0.98)] text-[var(--text)]"
-            }`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className={`flex items-start justify-between gap-4 border-b pb-4 ${theme === "light" ? "border-black/10" : "border-white/10"}`}>
+          <span className="grid size-8 place-items-center rounded-full" style={{ background: "linear-gradient(135deg,#5b3df5,#2dd4bf)" }}>
+            <Sparkle className="size-4 text-white" />
+          </span>
+          <span className="hidden md:inline">{assistantSection.dockTitle}</span>
+        </button>
+      )}
+      {assistantOpen && (
+        <section id="nx-assistant" role="dialog" aria-modal="true" aria-label={assistantSection.dockTitle} className="nx-dock">
+          <div className="flex items-start justify-between gap-4 border-b border-[var(--nx-line)] px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] md:pt-4">
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center rounded-full" style={{ background: "linear-gradient(135deg,#5b3df5,#2dd4bf)" }}>
+                <Sparkle className="size-5 text-white" />
+              </span>
               <div>
-                <div
-                  className={`text-sm uppercase tracking-[0.22em] ${
-                    theme === "light" ? "text-[#8f6416]" : "text-[var(--accent-2)]"
-                  }`}
-                >
-                  Service Deep Dive
-                </div>
-                <h3 className={`mt-2 text-[1.9rem] font-semibold leading-tight sm:text-[2.15rem] ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>
-                  {activeService.title}
-                </h3>
-                <p className={`mt-2 max-w-2xl text-sm leading-6 ${theme === "light" ? "text-[#6f5d49]" : "text-white/68"}`}>
-                  {activeService.description}
-                </p>
+                <div className="font-semibold">{assistantSection.dockTitle}</div>
+                <p className="text-[13px] text-[var(--nx-muted)]">{assistantSection.dockDescription}</p>
               </div>
-              <button
-                type="button"
-                onClick={() => setActiveServiceIndex(null)}
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border transition-colors ${
-                  theme === "light"
-                    ? "border-black/10 bg-black/[0.04] text-[#181310] hover:bg-black/[0.08]"
-                    : "border-white/10 bg-white/[0.04] text-white/80 hover:bg-white/[0.08]"
-                }`}
-                aria-label="Close service details"
-              >
-                &times;
+            </div>
+            <button type="button" onClick={() => setAssistantOpen(false)} className="nx-icon-btn size-9 shrink-0" aria-label={`Close ${assistantSection.dockTitle}`} autoFocus>
+              <Close className="size-4" />
+            </button>
+          </div>
+          <div ref={assistantScrollRef} className="flex-1 space-y-3 overflow-y-auto px-5 py-5" aria-live="polite">
+            {assistantMessages.map((message) => (
+              <div key={message.id} className={cx("flex", message.role === "user" ? "justify-end" : "justify-start")}>
+                <div className={cx("max-w-[85%] whitespace-pre-wrap px-4 py-2.5 text-[15px] leading-relaxed", message.role === "user" ? "nx-bubble-user" : "nx-bubble-bot")}>
+                  {message.content === "…" ? (
+                    <span className="flex gap-1 py-1.5" aria-label="Thinking">
+                      {[0, 150, 300].map((d) => (
+                        <span key={d} className="nx-typing-dot size-1.5 rounded-full bg-[var(--nx-muted)]" style={{ animationDelay: `${d}ms` }} />
+                      ))}
+                    </span>
+                  ) : (
+                    message.content
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-[var(--nx-line)] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:pb-4">
+            {!assistantMessages.some((m) => m.role === "user") && (
+              <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
+                {assistantSection.suggestions.map((item) => (
+                  <button key={item} type="button" onClick={() => setAssistantInput(item)} className="nx-chip shrink-0 cursor-pointer whitespace-nowrap py-1.5 hover:border-[var(--nx-violet)] hover:text-[var(--nx-violet)]">
+                    {item}
+                  </button>
+                ))}
+              </div>
+            )}
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleAssistantSubmit();
+              }}
+              className="flex items-center gap-2 rounded-full border border-[var(--nx-line-strong)] bg-[var(--nx-bg)] p-1.5 pl-4 focus-within:border-[var(--nx-violet)]"
+            >
+              <input
+                value={assistantInput}
+                onChange={(event) => setAssistantInput(event.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-[var(--nx-muted)]"
+                placeholder="Ask about timelines, pricing, stack…"
+                aria-label={`Message ${assistantSection.dockTitle}`}
+              />
+              <button type="submit" disabled={assistantLoading || !assistantInput.trim()} className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--nx-violet)] text-[var(--nx-on-violet)] transition-opacity disabled:opacity-40" aria-label="Send message">
+                <Send className="size-4" />
+              </button>
+            </form>
+          </div>
+        </section>
+      )}
+
+      {/* ── Service details ────────────────────────────────────────────── */}
+      {activeService && (
+        <>
+          <div className="nx-overlay" onClick={() => setActiveServiceIndex(null)} />
+          <div role="dialog" aria-modal="true" aria-labelledby="nx-service-title" className="nx-dialog sm:max-w-3xl">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--nx-line)] p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <span className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-[var(--nx-violet-soft)] text-[var(--nx-violet)]">
+                  <ServiceIcon index={activeServiceIndex ?? 0} className="size-6" />
+                </span>
+                <div>
+                  <h3 id="nx-service-title" className="nx-display text-[28px]">
+                    {activeService.title}
+                  </h3>
+                  <p className="nx-lead mt-1.5 max-w-xl">{activeService.description}</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setActiveServiceIndex(null)} className="nx-icon-btn shrink-0" aria-label="Close service details" autoFocus>
+                <Close className="size-5" />
               </button>
             </div>
-
-            <div className="mt-5 grid gap-4 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
-              <div className={`rounded-[1.35rem] border p-4 sm:p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
-                <div className={`text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
-                  What This Covers
-                </div>
-                <ul className={`mt-3 space-y-2.5 text-sm leading-6 ${theme === "light" ? "text-[#2a2118]" : "text-white/82"}`}>
+            <div className="grid gap-8 p-6 sm:grid-cols-[1.2fr_1fr] sm:p-8">
+              <div>
+                <div className="nx-kicker">What’s included</div>
+                <ul className="mt-4 space-y-3">
                   {activeService.points.map((point) => (
-                    <li key={point} className="flex gap-3">
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[var(--accent-2)] shadow-[0_0_14px_rgba(53,227,177,0.35)]" />
-                      <span>{point}</span>
+                    <li key={point} className="flex gap-3 text-[15px] leading-relaxed">
+                      <Check className="mt-0.5 size-5 shrink-0 text-[var(--nx-violet)]" />
+                      {point}
                     </li>
                   ))}
                 </ul>
               </div>
-
-              <div className={`rounded-[1.35rem] border p-4 sm:p-5 ${theme === "light" ? "border-black/10 bg-black/[0.03]" : "border-white/10 bg-white/[0.03]"}`}>
-                <div className={`text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
-                  Suggested Tools
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {activeService.technologies.map((technology) => (
-                    <span
-                      key={technology}
-                      className={`rounded-full border px-3 py-2 text-xs font-medium ${
-                        theme === "light"
-                          ? "border-black/10 bg-white/70 text-[#181310]"
-                          : "border-white/10 bg-white/[0.05] text-[var(--text)]"
-                      }`}
-                    >
-                      {technology}
+              <div>
+                <div className="nx-kicker">Tools we reach for</div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {activeService.technologies.map((tech) => (
+                    <span key={tech} className="nx-chip px-3 py-1.5 text-[13px]">
+                      {tech}
                     </span>
                   ))}
                 </div>
-
-                <div className={`mt-5 text-sm uppercase tracking-[0.2em] ${theme === "light" ? "text-[#7a6850]" : "text-white/55"}`}>
-                  Delivery Flow
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3 sm:gap-3">
-                  {[
-                    { phase: "Discover", detail: "Clarify the brief, scope, and outcome." },
-                    { phase: "Build", detail: "Shape the work with clean structure and polish." },
-                    { phase: "Launch", detail: "Deliver the final output ready for use." },
-                  ].map((step, stepIndex) => (
-                    <div
-                      key={step.phase}
-                      className={`flex items-start gap-3 rounded-2xl border p-3 ${
-                        theme === "light" ? "border-black/10 bg-white/70" : "border-white/8 bg-white/[0.03]"
-                      }`}
-                    >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] text-xs font-semibold text-white">
-                        {String(stepIndex + 1).padStart(2, "0")}
-                      </div>
-                      <div>
-                        <div className={`text-sm font-medium ${theme === "light" ? "text-[#181310]" : "text-[var(--text)]"}`}>{step.phase}</div>
-                        <div className={`mt-1 text-xs leading-5 ${theme === "light" ? "text-[#6f5d49]" : "text-white/55"}`}>{step.detail}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-[var(--nx-line)] bg-[var(--nx-bg)] p-6 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+              <p className="text-[14px] text-[var(--nx-muted)]">Discover → build → launch, with a weekly demo along the way.</p>
+              <a
+                href="#contact"
+                onClick={(e) => {
+                  setActiveServiceIndex(null);
+                  goTo(e, "#contact");
+                }}
+                className="nx-btn nx-btn-ink"
+              >
+                Talk about {activeService.title.toLowerCase()} <ArrowRight className="size-4" />
+              </a>
             </div>
           </div>
-        </div>
-      ) : null}
+        </>
+      )}
 
-      {reviewModalOpen ? (
-        <div className="fixed inset-0 z-[70] bg-black/70 px-4 py-8 backdrop-blur-sm">
-          <div className="mx-auto mt-8 max-w-2xl rounded-[2rem] surface-panel-strong p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="text-sm uppercase tracking-[0.22em] text-[var(--accent-2)]">
-                  {reviewsSection.ctaButton}
-                </div>
-                <h3 className="mt-2 text-2xl font-semibold text-[var(--text)]">
-                  {reviewsSection.modalTitle}
-                </h3>
-                <p className="mt-2 text-sm leading-7 text-[var(--text-soft)]">
-                  {reviewsSection.modalDescription}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setReviewModalOpen(false)}
-                className="grid h-10 w-10 place-items-center rounded-full soft-border"
-                aria-label="Close review form"
-              >
-                &times;
-              </button>
-            </div>
-            <form className="mt-6 space-y-4" onSubmit={handleReviewSubmit}>
-              <div className="grid gap-4 md:grid-cols-2">
+      {/* ── Add a review ───────────────────────────────────────────────── */}
+      {reviewModalOpen && (
+        <>
+          <div className="nx-overlay" onClick={() => setReviewModalOpen(false)} />
+          <div role="dialog" aria-modal="true" aria-labelledby="nx-review-title" className="nx-dialog sm:max-w-xl">
+            <form onSubmit={handleReviewSubmit}>
+              <div className="flex items-start justify-between gap-4 p-6 sm:p-8">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Name
-                  </label>
-                  <input
-                    className="field"
-                    value={reviewForm.name}
-                    onChange={(event) =>
-                      setReviewForm((current) => ({ ...current, name: event.target.value }))
-                    }
-                  />
+                  <h3 id="nx-review-title" className="nx-display text-[26px]">
+                    {site.reviewsSection.modalTitle}
+                  </h3>
+                  <p className="nx-lead mt-1.5">{site.reviewsSection.modalDescription}</p>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                    Company
-                  </label>
-                  <input
-                    className="field"
-                    value={reviewForm.company}
-                    onChange={(event) =>
-                      setReviewForm((current) => ({ ...current, company: event.target.value }))
-                    }
-                  />
-                </div>
+                <button type="button" onClick={() => setReviewModalOpen(false)} className="nx-icon-btn shrink-0" aria-label="Close review form" autoFocus>
+                  <Close className="size-5" />
+                </button>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                  Rating
-                </label>
-                <div className="flex gap-2">
-                  {Array.from({ length: 5 }).map((_, index) => {
-                    const rating = index + 1;
-                    const filled = rating <= selectedRating;
-                    return (
+              <div className="grid gap-5 px-6 sm:px-8">
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="review-name" className="nx-label">
+                      Name
+                    </label>
+                    <input id="review-name" className="nx-field" value={reviewForm.name} onChange={(e) => setReviewForm((c) => ({ ...c, name: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label htmlFor="review-company" className="nx-label">
+                      Company
+                    </label>
+                    <input id="review-company" className="nx-field" value={reviewForm.company} onChange={(e) => setReviewForm((c) => ({ ...c, company: e.target.value }))} />
+                  </div>
+                </div>
+                <fieldset>
+                  <legend className="nx-label">Rating</legend>
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
                       <button
-                        key={rating}
+                        key={i}
                         type="button"
-                        onClick={() => setSelectedRating(rating)}
-                        className={`text-3xl transition-transform hover:scale-110 ${
-                          filled ? "text-amber-300" : "text-white/25"
-                        }`}
-                        aria-label={`Set rating to ${rating}`}
+                        onClick={() => setSelectedRating(i + 1)}
+                        aria-label={`${i + 1} star${i ? "s" : ""}`}
+                        aria-pressed={selectedRating === i + 1}
+                        className={cx("grid size-10 place-items-center rounded-full transition-transform hover:scale-110", i < selectedRating ? "text-[var(--nx-violet)]" : "text-[var(--nx-line-strong)]")}
                       >
-                        ★
+                        <Star filled={i < selectedRating} className="size-7" />
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+                </fieldset>
+                <div>
+                  <label htmlFor="review-text" className="nx-label">
+                    Your review
+                  </label>
+                  <textarea id="review-text" rows={4} className="nx-field resize-none" value={reviewForm.text} onChange={(e) => setReviewForm((c) => ({ ...c, text: e.target.value }))} />
                 </div>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-[var(--text-soft)]">
-                  Your Review
-                </label>
-                <textarea
-                  className="field min-h-32 resize-none"
-                  value={reviewForm.text}
-                  onChange={(event) =>
-                    setReviewForm((current) => ({ ...current, text: event.target.value }))
-                  }
-                />
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => setReviewModalOpen(false)}
-                  className="rounded-full surface-panel px-5 py-3 text-sm font-semibold text-[var(--text)]"
-                >
+              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[var(--nx-line)] p-6 sm:flex-row sm:justify-end sm:px-8">
+                <button type="button" onClick={() => setReviewModalOpen(false)} className="nx-btn nx-btn-ghost">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="rounded-full bg-[linear-gradient(135deg,var(--accent),var(--accent-2))] px-5 py-3 text-sm font-semibold text-white"
-                >
-                  Submit Review
+                <button type="submit" disabled={reviewBusy} className="nx-btn nx-btn-violet">
+                  {reviewBusy ? "Publishing…" : "Publish review"}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-      ) : null}
+        </>
+      )}
     </div>
   );
 }
-
-
-
